@@ -241,8 +241,10 @@ function Seraphina({ speaking, phase, mood="neutral" }) {
           <video
             src={SERAPHINA_VIDEO}
             autoPlay
+            muted
             loop
             playsInline
+            controls={false}
             style={{
               width:"100%",
               height:"100%",
