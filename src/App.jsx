@@ -238,21 +238,52 @@ function Seraphina({ speaking, phase, mood="neutral" }) {
         aspectRatio:"3/4",
       }}>
         {phase === "intro" ? (
-          <video
-            src={SERAPHINA_VIDEO}
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls={false}
-            style={{
-              width:"100%",
-              height:"100%",
-              objectFit:"cover",
-              objectPosition:"center top",
-              display:"block",
-            }}
-          />
+          <>
+            <video
+              ref={videoRef2}
+              src={SERAPHINA_VIDEO}
+              autoPlay
+              muted={muted}
+              loop
+              playsInline
+              controls={false}
+              style={{
+                width:"100%",
+                height:"100%",
+                objectFit:"cover",
+                objectPosition:"center top",
+                display:"block",
+              }}
+            />
+            <div
+              onClick={()=>{
+                setMuted(false);
+                if(videoRef2.current) { videoRef2.current.muted = false; videoRef2.current.play(); }
+              }}
+              style={{
+                position:"absolute",
+                bottom:70,
+                left:"50%",
+                transform:"translateX(-50%)",
+                background:"rgba(8,5,16,0.75)",
+                border:`1px solid ${C.gold}88`,
+                borderRadius:30,
+                padding:"8px 20px",
+                fontFamily:"Cinzel,serif",
+                fontSize:11,
+                color:C.gold,
+                letterSpacing:1.5,
+                cursor:"pointer",
+                display:muted?"flex":"none",
+                alignItems:"center",
+                gap:8,
+                backdropFilter:"blur(8px)",
+                whiteSpace:"nowrap",
+                zIndex:5,
+              }}>
+              <span style={{fontSize:16}}>🔊</span> TAP FOR SOUND
+            </div>
+          </>
         ) : (
           <img
             src={SERAPHINA_IMG}
@@ -428,7 +459,7 @@ const Steps=({current})=>(
 
 function ShareCard({reading}) {
   const [copied,setCopied]=useState(false);
-  const text=`✨ My Mystic Palm Reading ✨\n\nSoul Sign: ${reading.soulSign}\nLucky #${reading.luckyNumber} · ${reading.luckyColor}\n\n"${reading.teaser}"\n\n🔮 MysticPalm.app`;
+  const text=`✨ My Mystic Fortunes Reading ✨\n\nSoul Sign: ${reading.soulSign}\nLucky #${reading.luckyNumber} · ${reading.luckyColor}\n\n"${reading.teaser}"\n\n🔮 MysticFortunes.app`;
   const copy=()=>{navigator.clipboard?.writeText(text).catch(()=>{});setCopied(true);setTimeout(()=>setCopied(false),2200);};
   return (
     <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:12}}>
@@ -509,7 +540,7 @@ function CompatSection({myReading}) {
   );
 }
 
-export default function MysticPalm() {
+export default function MysticFortunes() {
   const [phase,setPhase]=useState("intro");
   const [palmImage,setPalmImage]=useState(null);
   const [reading,setReading]=useState(null);
@@ -664,7 +695,7 @@ Respond ONLY with valid JSON, no markdown: {"greeting":"dramatic 1-sentence max 
         {phase==="intro"&&(
           <div style={{paddingTop:36,paddingBottom:60,animation:"fadeUp 0.8s ease both"}}>
             <div style={{textAlign:"center",marginBottom:20}}>
-              <div style={{fontFamily:"Cinzel,serif",fontSize:"clamp(32px,8vw,54px)",fontWeight:700,color:C.gold,margin:"0 0 8px",lineHeight:1.1,animation:"goldGlow 3s ease-in-out infinite",letterSpacing:2}}>Mystic Palm</div>
+              <div style={{fontFamily:"Cinzel,serif",fontSize:"clamp(32px,8vw,54px)",fontWeight:700,color:C.gold,margin:"0 0 8px",lineHeight:1.1,animation:"goldGlow 3s ease-in-out infinite",letterSpacing:2}}>Mystic Fortunes</div>
               <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:"clamp(16px,4vw,22px)",fontWeight:400,color:C.cream,margin:0,lineHeight:1.4,opacity:0.85}}>Your future is already written.</div>
             </div>
 
