@@ -316,14 +316,56 @@ function generateFortune(seed, userName, dob) {
   ];
   const greeting = seededPick(rng, GREETINGS);
   const nearFuture   = nearFutureCandidate;
-  const fullReading  = `${personality}
+  const sRng = seededRandom((seed ^ 0x3C3C3C3C) >>> 0);
 
-${love}
+  const SERAPHINA_OPENERS = [
+    `${name}, I have studied your palm carefully. What I am about to tell you is not what I tell everyone — it is specific to the particular convergence of lines your hand carries.`,
+    `There are readings I give that feel routine, ${name}. This is not one of them. The lines of your palm have a quality that demands I speak plainly rather than poetically.`,
+    `${name}, the palm tells the truth even when the person holding it is not ready to hear it. I am going to tell you what I see — all of it.`,
+    `I want to begin by telling you something, ${name}: what I see in your hand is not common. I have read enough palms to know the difference between ordinary and significant. Yours is the latter.`,
+    `${name}, the lines of your palm speak in a voice I do not often encounter — clear, insistent, layered. I will do my best to translate what they are asking you to hear.`,
+    `What strikes me first about your palm, ${name}, is not any single line — it is the relationship between them. The way they speak to each other tells a more complete story than any one line captures alone.`,
+    `Let me be direct with you, ${name}. The reading I am about to give you is not a performance. These are the things I actually see when I look at your hand.`,
+    `${name}, I begin where the palm asks me to — not with the lines themselves, but with the quality of the person who carries them. Your hand tells me who you are before it tells me what is coming.`,
+  ];
 
-${career}
+  const SERAPHINA_SYNTHESIS = [
+    `The emotional architecture of your life — what the heart line suggests about how you love and what the life line confirms about how you endure — points to someone who has paid a high price for depth. You have not been permitted the luxury of surface living. Every significant experience has required your full engagement. This is the source of both your exhaustion and your gravity.`,
+    `What the individual lines cannot tell you, but their combination can, is this: you are in a period of preparation that will not announce itself as such until it is complete. The things that feel like delay are actually precision. The universe is not slow with you — it is careful.`,
+    `The convergence of your emotional and life energies points toward a specific kind of strength — the kind built through friction rather than gift. What you have, you earned. This matters because earned strength is reliable in a way that inherited ease never is.`,
+    `Reading the palm as a whole rather than line by line, ${name}, I see someone whose story is not finished — and someone who has not yet written the chapters that will define how the earlier ones are remembered. What has happened to you is not the conclusion. It is the context.`,
+    `The lines speak to each other in ways that change their individual meaning, ${name}. The love you are capable of is shaped by the life you have lived. The life you have lived has been preparing you for the love you have not yet given. These are not separate — they are the same story told from different angles.`,
+    `Your palm tells me that you have been operating below your own capacity for some time, ${name} — not from lack of ability but from circumstance and the weight of things still being carried. The lines suggest you are close to setting something down. When you do, the capacity becomes visible.`,
+    `The story your palm tells, ${name}, is of someone standing at a genuine threshold. Not a metaphorical one. The lines converge in a way that speaks of actual change — the kind that looks ordinary from the outside and is seismic from the inside.`,
+    `The pattern across all your lines, ${name}, is consistent: a life that has moved through compression and is now approaching expansion. The compression was not punishment. It was the precise condition required to build what comes next.`,
+  ];
 
-This is not chance that brought you here, ${name}. The lines of your palm carry a specific frequency — a signature that marks you as someone standing at the beginning of something the rest of your life will be shaped by. The question the stars are asking you is not whether the change is coming. It is whether you will step toward it deliberately, or wait for it to arrive and find you unprepared.`;
+  const SERAPHINA_WARNINGS = [
+    `There is one thing the palm asks me to name directly, ${name}: the pattern of self-abandonment that runs through your history — the ways you have made yourself smaller to accommodate others — is encoded as something you are capable of choosing differently. The lines show the pattern. They do not say it is permanent.`,
+    `I would be doing you a disservice if I did not name what the palm also shows alongside the gifts, ${name}: a tendency to know the right thing and delay the doing of it. The delay is the only thing standing between you and the life the lines describe as available.`,
+    `What I see alongside everything promising, ${name}, is evidence of a story you have been telling yourself for a very long time — about what you deserve, what is possible for someone like you. That story is not accurate. But it has been governing your choices as though it were.`,
+    `The palm shows something I must say plainly, ${name}: the version of the future visible in your lines is real, but it is not automatic. It requires one specific decision — one you have been approaching and retreating from. The lines do not tell me what it is. You know what it is.`,
+  ];
 
+  const SERAPHINA_CLOSINGS = [
+    `This is not chance that brought you here, ${name}. The lines carry a specific frequency — a signature that marks you as someone standing at the beginning of something the rest of your life will be shaped by. The question is not whether the change is coming. It is whether you will meet it deliberately or wait for it to arrive and find you unprepared.`,
+    `I say to you what the lines ask me to say, ${name}: you are more ready than you feel. The preparation is complete even if it does not feel that way from inside it. What comes next will ask you to act from that readiness before you have confirmation it is there.`,
+    `The palm closes with something I do not often see so clearly, ${name}: a future that is genuinely open. The choices you make in the next season will have a disproportionate effect on the years that follow. This is the window. You are standing in it.`,
+    `I leave you with what the lines leave me with, ${name}: a sense of someone whose story is building toward something it has not yet arrived at. The difficulty has not been wasted. The waiting has not been wasted. Nothing has been wasted. It has all been necessary.`,
+    `What I want you to carry from this reading, ${name}, is not the individual predictions — it is the overall impression: you are enough. You are more than enough. And the life available to you is larger than the one you have been giving yourself permission to want.`,
+  ];
+
+  const seraphina1 = seededPick(sRng, SERAPHINA_OPENERS);
+  const seraphina2 = seededPick(sRng, SERAPHINA_SYNTHESIS);
+  const seraphina3 = seededPick(sRng, SERAPHINA_WARNINGS);
+  const seraphina4 = seededPick(sRng, SERAPHINA_CLOSINGS);
+  const fullReading  = `${seraphina1}
+
+${seraphina2}
+
+${seraphina3}
+
+${seraphina4}`;
   return {
     greeting, teaser, personality, love, career, money, futureEvent,
     warning, soulSign, luckyColor, luckyNumber,
