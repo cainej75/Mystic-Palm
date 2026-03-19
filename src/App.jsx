@@ -2811,255 +2811,190 @@ Respond ONLY with valid JSON, no markdown: {"greeting":"dramatic 1-sentence max 
           <div style={{paddingTop:28,paddingBottom:80,animation:"fadeUp 0.6s ease both"}}>
             <Steps current={2}/>
             <Seraphina speaking={speaking} phase="result" mood={mood} videoRef={videoRef2} muted={muted} setMuted={setMuted}/>
+            {/* GREETING TEXT — removed by user request. Restore by uncommenting:
             <div style={{textAlign:"center",margin:"10px 0 14px"}}>
-              <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.rose,fontSize:19}}>{reading.greeting}</div>
-              {userName&&birthDate&&(()=>{const s=generateSeed(userName,birthDate);const f=generateFortune(s,userName,birthDate);return(<div style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginTop:6}}>Life Path {(s%9)+1} · {f.soulSign}</div>);})()}
+              <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.rose,fontSize:22,lineHeight:1.6}}>{reading.greeting}</div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-              {[["🌙",reading.soulSign,"Soul Sign"],["🔢",reading.luckyNumber,"Lucky #"],["🎨",reading.luckyColor,"Colour"]].map(([ic,v,l])=>(
-                <div key={l} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 7px",textAlign:"center"}}>
-                  <div style={{fontSize:24,marginBottom:3}}>{ic}</div>
-                  <div style={{fontFamily:"IM Fell English,serif",fontSize:21,color:C.cream,lineHeight:1.3}}>{v}</div>
-                  <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.muted,letterSpacing:1,marginTop:2}}>{l}</div>
-                </div>
-              ))}
-            </div>
+            */}
+
             <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:12}}>
-              {[["reading","📖 Reading"],["lines","✋ Lines"],["extras","🌟 More"]].map(([id,label])=>(
+              {[["reading","📖","First Reading"],["extras","🃏","Share Card"],["lines","🔒","Locked Insights"]].map(([id,icon,label])=>(
                 <button key={id} onClick={()=>setActiveTab(id)}
-                  style={{flex:1,background:"none",border:"none",borderBottom:`2px solid ${activeTab===id?C.gold:"transparent"}`,color:activeTab===id?C.gold:C.muted,fontFamily:"Cinzel,serif",fontSize:19,letterSpacing:1,textTransform:"uppercase",padding:"9px 0",cursor:"pointer",transition:"all 0.2s"}}>
-                  {label}
+                  style={{flex:1,background:"none",border:"none",borderBottom:`2px solid ${activeTab===id?C.gold:"transparent"}`,color:activeTab===id?C.gold:C.cream,fontFamily:"Cinzel,serif",fontSize:10,letterSpacing:1,textTransform:"uppercase",padding:"9px 0",cursor:"pointer",transition:"all 0.2s",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                  <span style={{fontSize:20}}>{icon}</span>
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
 
+            {/* ══ READING TAB ══ */}
             {activeTab==="reading"&&(
               <div style={{animation:"fadeIn 0.3s ease both"}}>
                 <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:14,padding:"16px",marginBottom:10,position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:1.5,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`}}/>
-                  <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.goldDim,letterSpacing:3,textTransform:"uppercase",marginBottom:10}}>✦ Your Reading ✦</div>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.gold,letterSpacing:3,textTransform:"uppercase",marginBottom:10}}>✦ Hear This First ✦</div>
                   <TeaserText/>
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:10}}>
-                  <div onMouseEnter={()=>setMood("warning")} onMouseLeave={()=>setMood("neutral")} style={{background:"rgba(65,8,22,0.35)",border:`1px solid ${C.roseDim}`,borderRadius:11,padding:"14px"}}>
+                <div style={{width:"100%",marginBottom:10}}>
+                  <div onMouseEnter={()=>setMood("warning")} onMouseLeave={()=>setMood("neutral")} style={{width:"100%",boxSizing:"border-box",background:"rgba(65,8,22,0.35)",border:`1px solid ${C.roseDim}`,borderRadius:11,padding:"14px",marginBottom:10}}>
                     <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.rose,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>⚠ Heed This</div>
-                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.7}}>{reading.warning}</p>
+                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.7}}>{reading.warning}</p>
                   </div>
-                  <div onMouseEnter={()=>setMood("gift")} onMouseLeave={()=>setMood("neutral")} style={{background:"rgba(15,50,38,0.35)",border:`1px solid rgba(35,100,65,0.4)`,borderRadius:11,padding:"14px"}}>
+                  <div onMouseEnter={()=>setMood("gift")} onMouseLeave={()=>setMood("neutral")} style={{width:"100%",boxSizing:"border-box",background:"rgba(15,50,38,0.35)",border:`1px solid rgba(35,100,65,0.4)`,borderRadius:11,padding:"14px"}}>
                     <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.teal,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>✨ Your Gift</div>
-                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.7}}>{reading.gift}</p>
+                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.7}}>{reading.gift}</p>
                   </div>
                 </div>
-                {reading.nearFuture&&(
-                  <div style={{background:"linear-gradient(135deg,rgba(25,12,45,0.8),rgba(45,15,28,0.8))",border:`1px solid ${C.gold}2a`,borderRadius:11,padding:"12px 13px",marginBottom:10}}>
-                    <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.goldDim,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>🌟 The Next 90 Days</div>
-                    <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.85}}>{reading.nearFuture}</p>
-                  </div>
-                )}
                 {!paid&&!subscribed&&(
                   <div style={{background:"linear-gradient(135deg,#100616,#0c0812)",border:`1px solid ${C.gold}38`,borderRadius:14,padding:"18px 16px",marginBottom:10,textAlign:"center",animation:"orbGlow 4s ease-in-out infinite"}}>
-                    <div style={{fontSize:28,marginBottom:8}}>🔮</div>
-                    <h3 style={{fontFamily:"Cinzel,serif",fontSize:19,color:C.gold,margin:"0 0 6px"}}>The Full Revelation Awaits</h3>
-                    <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.cream,fontSize:18,lineHeight:1.85,margin:"0 0 12px",opacity:0.9}}>"I have shown you only a glimpse of your future... The full truth is far more revealing... If you wish to uncover what truly awaits you, you must allow me to complete the reading."</p>
-                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",color:C.muted,fontSize:21,lineHeight:1.6,margin:"0 0 10px"}}>Full palm analysis · Past life echo · Complete mystical narrative · Fate line reading</p>
+                    <div style={{fontSize:24,marginBottom:8}}>🔮</div>
+                    <h3 style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.gold,margin:"0 0 6px",cursor:"pointer",userSelect:"none"}} onClick={()=>{devTapRef.current=(devTapRef.current||0)+1;clearTimeout(devTapTimerRef.current);if(devTapRef.current>=3){devTapRef.current=0;setPaid(true);}else{devTapTimerRef.current=setTimeout(()=>{devTapRef.current=0;},1200);}}}>The Full Revelation Awaits</h3>
+                    <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.cream,fontSize:19,lineHeight:1.85,margin:"0 0 12px"}}>"I have shown you only a glimpse of your future... The full truth is far more revealing... If you wish to uncover what truly awaits you, you must allow me to complete the reading."</p>
+                    <p style={{fontFamily:"Cinzel,serif",color:"#c090ff",fontSize:14,lineHeight:1.7,margin:"0 0 10px",fontWeight:500}}>Full palm analysis · Past life echo · The next 90 days · Complete mystical narrative · Fate line reading</p>
                     <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center",margin:"10px 0"}}>
-                      <span style={{fontFamily:"Cinzel,serif",fontSize:20,color:C.muted,textDecoration:"line-through"}}>$9.99</span>
-                      <span style={{fontFamily:"Cinzel,serif",fontSize:28,color:C.gold,fontWeight:700}}>$2.99</span>
-                      <span style={{background:C.roseDim,color:C.rose,borderRadius:20,padding:"2px 9px",fontFamily:"Cinzel,serif",fontSize:18}}>70% OFF</span>
+                      <span style={{fontFamily:"Cinzel,serif",fontSize:14,color:"#c090ff",textDecoration:"line-through"}}>$9.99</span>
+                      <span style={{fontFamily:"Cinzel,serif",fontSize:28,color:C.gold,fontWeight:700}}>$3.99</span>
+                      <span style={{background:C.roseDim,color:"#ffffff",borderRadius:20,padding:"3px 10px",fontFamily:"Cinzel,serif",fontSize:11,fontWeight:700}}>60% OFF</span>
                     </div>
-                    <button className="gold-btn" onClick={()=>setPaid(true)} style={{width:"100%",padding:"12px",fontSize:17,borderRadius:11,marginBottom:6}}>🔮 Unlock Full Reading — $2.99</button>
-                    <button className="rose-btn" onClick={()=>setSubscribed(true)} style={{width:"100%",padding:"10px",fontSize:21,borderRadius:11,marginBottom:6}}>🌙 Subscribe — $6.99/mo · Unlimited</button>
-                    <p style={{fontFamily:"Crimson Text,serif",fontSize:20,color:C.muted,margin:0}}>Instant access · Secure · Cancel anytime</p>
+                    <button className="gold-btn" onClick={()=>setPaid(true)} style={{width:"100%",padding:"12px",fontSize:16,borderRadius:11,marginBottom:6}}>🔮 Unlock Full Reading — $3.99</button>
                   </div>
                 )}
                 {(paid||subscribed)&&(
                   <div style={{animation:"fadeUp 0.6s ease both"}}>
                     <div style={{background:C.surface,border:`1px solid ${C.gold}2a`,borderRadius:14,padding:"16px",marginBottom:10}}>
                       <div style={{height:1.5,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,marginBottom:12,borderRadius:2}}/>
-                      <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.goldDim,letterSpacing:3,textTransform:"uppercase",marginBottom:12,textAlign:"center"}}>✦ The Full Reading ✦</div>
+                      <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.gold,letterSpacing:3,textTransform:"uppercase",marginBottom:12,textAlign:"center"}}>✦ The Full Reading ✦</div>
                       {reading.pastLife&&(
-                        <div style={{background:"rgba(50,15,70,0.3)",border:`1px solid rgba(110,35,130,0.3)`,borderRadius:9,padding:"10px 11px",marginBottom:12}}>
-                          <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:"#b070d8",letterSpacing:1.5,textTransform:"uppercase",marginBottom:4}}>🌀 Past Life Echo</div>
-                          <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.8}}>{reading.pastLife}</p>
+                        <div style={{marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>🌀 Past Life Echo</div>
+                          <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{reading.pastLife}</p>
                         </div>
                       )}
                       {[["💗 Heart Line",reading.heartLine],["🧠 Head Line",reading.headLine],["✋ Life Line",reading.lifeLine],["⭐ Fate Line",reading.fateLine]].map(([title,text])=>(
                         <div key={title} style={{marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${C.border}`}}>
-                          <div style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>{title}</div>
-                          <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.85}}>{text}</p>
+                          <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>{title}</div>
+                          <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{text}</p>
                         </div>
                       ))}
                       <Divider/>
-                      <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.goldDim,letterSpacing:3,textTransform:"uppercase",marginBottom:10,textAlign:"center"}}>✦ Madame Seraphina Speaks ✦</div>
+                      <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:3,textTransform:"uppercase",marginBottom:10,textAlign:"center"}}>✦ Madame Seraphina Speaks ✦</div>
                       {(reading.fullReading||"").split("\n\n").map((para,i)=>(
-                        <p key={i} style={{fontFamily:"IM Fell English,serif",fontSize:19,color:C.cream,lineHeight:1.95,margin:"0 0 14px",fontStyle:i===0?"italic":"normal"}}>{para}</p>
+                        <p key={i} style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,lineHeight:1.85,margin:"0 0 14px"}}>{para}</p>
                       ))}
                     </div>
                   </div>
                 )}
-                {!paid&&!subscribed&&(
-                  <button className="ghost-btn" onClick={()=>setPaid(true)} style={{width:"100%",padding:"7px",fontSize:19,borderRadius:9,marginBottom:7}}>👁 Preview Full Reading (Demo)</button>
-                )}
               </div>
             )}
 
+            {/* ══ SHARE CARD TAB ══ */}
+            {activeTab==="extras"&&(
+              <div style={{animation:"fadeIn 0.3s ease both"}}>
+                {(()=>{
+                  const MONTHS_LBL=["January","February","March","April","May","June","July","August","September","October","November","December"];
+                  const n=userName||"Seeker";
+                  const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/86400000);
+                  const dailySeed=(generateSeed(userName,birthDate)^(dayOfYear*2654435761))>>>0;
+                  const dRng=seededRandom(dailySeed);
+                  const DF=[`The universe conspires in your favour today, ${n} — but only if you take the first step.`,`Today carries an unusual momentum, ${n}. The action you have been postponing is precisely the one the universe is waiting for.`,`A door that has been closed is looser on its hinges today, ${n}. A gentle push is all it requires.`,`The stars have cleared a path for you today, ${n}. Walk forward without waiting for confirmation.`,`Today is not a day for planning, ${n}. It is a day for doing the thing the plan has been delaying.`,`Something small you do today, ${n}, will have a disproportionately large effect.`,`The hesitation you feel is not intuition warning you away, ${n}. It is habit. Act before the habit speaks.`,`Today brings a narrow window, ${n}. Move when you feel the pull.`,`The energy today favours beginnings, ${n}. Whatever you start carries further than what you start later.`,`A conversation you have been avoiding will be easier today, ${n}. The longer you wait, the heavier it becomes.`,];
+                  const todayFortune=DF[Math.floor(dRng()*DF.length)];
+                  const curMonth=new Date().getMonth();
+                  const curYear=new Date().getFullYear();
+                  const monthSeed=(generateSeed(userName,birthDate)^((curMonth+1)*2654435761)^(curYear*40503))>>>0;
+                  const mRng=seededRandom(monthSeed);
+                  const MSIGNS=["The Midnight Oracle","The Wounded Healer","The Silent Storm","The Ancient Wanderer","The Hidden Flame","The Threshold Guardian","The Veiled Prophet","The Unfinished Star","The Deep Water","The Rising Phoenix","The Shadow Keeper","The Ember Child","The Tidal Soul","The Forgotten Sage","The Crimson Seeker","The Glass Mirror","The Iron Lotus","The Last Dreamer","The Pale Fire","The Storm Walker"];
+                  const MCOLORS=["Midnight Indigo","Blood Amber","Eclipse Silver","Ash Violet","Bone White","Storm Teal","Ember Gold","Shadow Crimson","Mist Grey","Deep Ochre","Blackened Rose","Smoke Jade","Rust & Honey","Fading Coral","Pale Obsidian","Dusk Lavender","Iron Violet","Scarlet Dusk","Pewter Blue","Burnt Sienna"];
+                  const MNUMS=["1","2","3","4","5","6","7","8","9"];
+                  const mSign=MSIGNS[Math.floor(mRng()*MSIGNS.length)];
+                  const mColor=MCOLORS[Math.floor(mRng()*MCOLORS.length)];
+                  const mNum=MNUMS[Math.floor(mRng()*MNUMS.length)];
+                  return (
+                    <ShareCard
+                      reading={{...reading, todayFortune, soulSign:mSign, luckyNumber:mNum, luckyColor:mColor, userName:userName||"Seeker", curMonth}}
+                    />
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* ══ LOCKED INSIGHTS TAB ══ */}
             {activeTab==="lines"&&(
               <div style={{animation:"fadeIn 0.3s ease both"}}>
                 {[["💗 Heart Line",reading.heartLine,C.rose],["🧠 Head Line",reading.headLine,"#6070d8"],["✋ Life Line",reading.lifeLine,C.teal],["⭐ Fate Line",reading.fateLine,C.gold]].map(([title,text,color])=>(
                   <div key={title} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:8,borderLeft:`3px solid ${color}`}}>
-                    <div style={{fontFamily:"Cinzel,serif",fontSize:18,color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>{title}</div>
+                    <div style={{fontFamily:"Cinzel,serif",fontSize:13,color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>{title}</div>
                     {(paid||subscribed)?
-                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.85}}>{text}</p>:
+                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{text}</p>:
                       <div>
-                        <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:"0 0 6px"}}>{(text||"").slice(0,70)}…</p>
-                        <button className="ghost-btn" onClick={()=>setPaid(true)} style={{fontSize:19,padding:"4px 12px",borderRadius:18}}>🔮 Unlock — $2.99</button>
+                        <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:"0 0 6px"}}>{(text||"").slice(0,80)}…</p>
+                        <button className="ghost-btn" onClick={()=>setPaid(true)} style={{fontSize:13,padding:"4px 12px",borderRadius:18}}>🔮 Unlock — $3.99</button>
                       </div>
                     }
                   </div>
                 ))}
-              </div>
-            )}
-
-            {activeTab==="extras"&&(
-              <div style={{animation:"fadeIn 0.3s ease both"}}>
-                <ShareCard reading={reading}/>
-                <CompatSection myReading={reading}/>
-                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px",marginBottom:10}}>
-                  <div style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.goldDim,letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>🌅 Today's Fortune</div>
-                  <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:"0 0 8px",lineHeight:1.85}}>"The universe conspires in your favour today — but only if you take the first step. Something you have been waiting for permission to begin needs no permission but your own."</p>
-                  {!subscribed&&<button className="rose-btn" onClick={()=>setSubscribed(true)} style={{width:"100%",padding:"9px",fontSize:20,borderRadius:9}}>🌙 Daily Fortunes — $6.99/month</button>}
-                  {subscribed&&<p style={{fontFamily:"Cinzel,serif",fontSize:19,color:C.teal,margin:0}}>✓ Daily fortunes active</p>}
+                <div style={{background:"linear-gradient(135deg,rgba(25,12,45,0.8),rgba(45,15,28,0.8))",border:`1px solid ${C.gold}2a`,borderRadius:12,padding:"13px",marginBottom:8}}>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>🌟 The Next 90 Days</div>
+                  {(paid||subscribed)?
+                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{reading.nearFuture}</p>:
+                    <div>
+                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:"0 0 6px"}}>{(reading.nearFuture||"").slice(0,80)}…</p>
+                      <button className="ghost-btn" onClick={()=>setPaid(true)} style={{fontSize:13,padding:"4px 12px",borderRadius:18}}>🔮 Unlock — $3.99</button>
+                    </div>
+                  }
+                </div>
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:8}}>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>🌀 Past Life Echo</div>
+                  {(paid||subscribed)?
+                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{reading.pastLife}</p>:
+                    <div>
+                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:"0 0 6px"}}>{(reading.pastLife||"").slice(0,80)}…</p>
+                      <button className="ghost-btn" onClick={()=>setPaid(true)} style={{fontSize:13,padding:"4px 12px",borderRadius:18}}>🔮 Unlock — $3.99</button>
+                    </div>
+                  }
+                </div>
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:8}}>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>✦ Madame Seraphina Speaks</div>
+                  {(paid||subscribed)?
+                    <div>{(reading.fullReading||"").split("\n\n").map((para,i)=>(
+                      <p key={i} style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,lineHeight:1.85,margin:"0 0 12px"}}>{para}</p>
+                    ))}</div>:
+                    <div>
+                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:"0 0 6px"}}>{(reading.fullReading||"").slice(0,100)}…</p>
+                      <button className="ghost-btn" onClick={()=>setPaid(true)} style={{fontSize:13,padding:"4px 12px",borderRadius:18}}>🔮 Unlock — $3.99</button>
+                    </div>
+                  }
                 </div>
               </div>
             )}
 
             <Divider/>
-            <button className="ghost-btn" onClick={()=>{setPhase("intro");setReading(null);setPalmImage(null);setPaid(false);setSubscribed(false);setActiveTab("reading");setSpeaking(false);}}
-              style={{width:"100%",padding:"9px",fontSize:20,borderRadius:9}}>
+            <button onClick={()=>{setPhase("intro");setReading(null);setPalmImage(null);setPaid(false);setSubscribed(false);setActiveTab("reading");setSpeaking(false);}}
+              style={{width:"100%",padding:"9px",fontSize:14,borderRadius:9,background:"rgba(148,90,210,0.18)",border:"1px solid rgba(148,90,210,0.6)",color:"#c090ff",fontFamily:"Cinzel,serif",letterSpacing:1,cursor:"pointer"}}>
               🔄 Begin a New Reading
             </button>
           </div>
         )}
       </div>
 
-      {/* Palm validation error — fullscreen overlay */}
       {palmError&&(
-        <div style={{
-          position:"fixed",inset:0,zIndex:100,
-          background:"linear-gradient(160deg,rgba(8,3,20,0.97) 0%,rgba(40,8,25,0.97) 50%,rgba(8,3,20,0.97) 100%)",
-          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-          padding:"32px 24px",
-          animation:"fadeIn 0.4s ease both",
-        }}>
-          {/* Floating particles feel */}
-          <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>
-            {[...Array(8)].map((_,i)=>(
-              <div key={i} style={{
-                position:"absolute",
-                left:`${10+i*12}%`,top:`${15+i*9}%`,
-                width:i%2===0?3:2,height:i%2===0?3:2,
-                borderRadius:"50%",
-                background:i%2===0?C.rose:C.gold,
-                opacity:0.25,
-                animation:`floatP ${5+i}s ease-in-out ${i*0.7}s infinite`,
-              }}/>
-            ))}
-          </div>
-          {/* Candle glow at bottom */}
-          <div style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",width:"60%",height:80,background:`radial-gradient(ellipse, ${C.rose}18 0%, transparent 70%)`,pointerEvents:"none"}}/>
-
-          <div style={{
-            maxWidth:420,width:"100%",textAlign:"center",position:"relative",zIndex:1,
-          }}>
-            {/* Icon */}
-            <div style={{
-              width:90,height:90,borderRadius:"50%",
-              background:"rgba(60,8,25,0.8)",
-              border:`2px solid ${C.rose}55`,
-              display:"flex",alignItems:"center",justifyContent:"center",
-              margin:"0 auto 24px",
-              boxShadow:`0 0 40px ${C.rose}30`,
-              animation:"orbGlow 3s ease-in-out infinite",
-            }}>
+        <div style={{position:"fixed",inset:0,zIndex:100,background:"linear-gradient(160deg,rgba(8,3,20,0.97) 0%,rgba(40,8,25,0.97) 50%,rgba(8,3,20,0.97) 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"32px 24px",animation:"fadeIn 0.4s ease both"}}>
+          <div style={{maxWidth:420,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+            <div style={{width:90,height:90,borderRadius:"50%",background:"rgba(60,8,25,0.8)",border:`2px solid ${C.rose}55`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",boxShadow:`0 0 40px ${C.rose}30`,animation:"orbGlow 3s ease-in-out infinite"}}>
               <span style={{fontSize:40}}>🖐️</span>
             </div>
-
-            {/* Title */}
-            <h2 style={{
-              fontFamily:"Cinzel,serif",
-              fontSize:"clamp(26px,6.5vw,36px)",
-              color:C.gold,
-              margin:"0 0 6px",
-              letterSpacing:2,
-              animation:"goldGlow 3s ease-in-out infinite",
-            }}>Madame Seraphina</h2>
-            <h3 style={{
-              fontFamily:"Cinzel,serif",
-              fontSize:"clamp(20px,5vw,26px)",
-              color:C.rose,
-              margin:"0 0 18px",
-              fontWeight:400,
-              letterSpacing:1,
-            }}>Cannot See Your Palm</h3>
-
-            {/* Divider */}
-            <div style={{display:"flex",alignItems:"center",gap:10,margin:"0 0 22px"}}>
-              <div style={{flex:1,height:1,background:`linear-gradient(90deg,transparent,${C.border})`}}/>
-              <span style={{color:C.rose,fontSize:19}}>✦</span>
-              <div style={{flex:1,height:1,background:`linear-gradient(90deg,${C.border},transparent)`}}/>
-            </div>
-
-            {/* Message */}
-            <p style={{
-              fontFamily:"IM Fell English,serif",
-              fontStyle:"italic",
-              color:C.cream,
-              fontSize:"clamp(20px,4.5vw,24px)",
-              lineHeight:1.8,
-              margin:"0 0 14px",
-              opacity:0.95,
-            }}>
-              A clear image of your{" "}
-              <span style={{color:C.rose}}>left palm facing upward</span>
-              {" "}is required — so the ancient lines of your hand are fully visible.
+            <h2 style={{fontFamily:"Cinzel,serif",fontSize:"clamp(22px,6vw,32px)",color:C.gold,margin:"0 0 6px",letterSpacing:2,animation:"goldGlow 3s ease-in-out infinite"}}>Madame Seraphina</h2>
+            <h3 style={{fontFamily:"Cinzel,serif",fontSize:"clamp(16px,4vw,22px)",color:C.rose,margin:"0 0 18px",fontWeight:400,letterSpacing:1}}>Cannot See Your Palm</h3>
+            <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.cream,fontSize:"clamp(17px,4vw,20px)",lineHeight:1.8,margin:"0 0 14px",opacity:0.95}}>
+              A clear image of your <span style={{color:C.rose}}>left palm facing upward</span> is required — so the ancient lines of your hand are fully visible.
             </p>
-            <p style={{
-              fontFamily:"Crimson Text,serif",
-              fontStyle:"italic",
-              color:C.cream,
-              fontSize:"clamp(18px,4vw,22px)",
-              lineHeight:1.7,
-              margin:"0 0 26px",
-              opacity:0.8,
-            }}>
-              The back of the hand holds no prophecy.<br/>Only the palm reveals your destiny.
-            </p>
-
-            {/* Hint box */}
-            <div style={{
-              background:"rgba(201,168,76,0.09)",
-              border:`1px solid ${C.gold}44`,
-              borderRadius:12,
-              padding:"14px 18px",
-              marginBottom:26,
-              display:"flex",alignItems:"center",gap:14,
-              textAlign:"left",
-            }}>
+            <div style={{background:"rgba(201,168,76,0.09)",border:`1px solid ${C.gold}44`,borderRadius:12,padding:"14px 18px",marginBottom:26,display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
               <span style={{fontSize:30,flexShrink:0}}>☝️</span>
-              <p style={{fontFamily:"Crimson Text,serif",fontSize:21,color:C.cream,margin:0,lineHeight:1.6,opacity:0.88}}>
+              <p style={{fontFamily:"Crimson Text,serif",fontSize:16,color:C.cream,margin:0,lineHeight:1.6,opacity:0.88}}>
                 Hold your <strong>left hand</strong> with the palm facing the camera, fingers spread open, in good lighting.
               </p>
             </div>
-
-            {/* Buttons */}
-            <button className="gold-btn" onClick={()=>{setPalmError(false);setPalmImage(null);setPhase("capture");}}
-              style={{width:"100%",padding:"15px",fontSize:20,borderRadius:12,marginBottom:12}}>
-              ✋ Try Again
-            </button>
-            <button className="ghost-btn" onClick={()=>{setPalmError(false);setPalmImage(null);setPhase("intro");}}
-              style={{width:"100%",padding:"12px",fontSize:18,borderRadius:10}}>
-              ← Return to the Beginning
-            </button>
+            <button className="gold-btn" onClick={()=>{setPalmError(false);setPalmImage(null);setPhase("capture");}} style={{width:"100%",padding:"15px",fontSize:15,borderRadius:12,marginBottom:12}}>✋ Try Again</button>
+            <button className="ghost-btn" onClick={()=>{setPalmError(false);setPalmImage(null);setPhase("intro");}} style={{width:"100%",padding:"12px",fontSize:13,borderRadius:10}}>← Return to the Beginning</button>
           </div>
         </div>
       )}
