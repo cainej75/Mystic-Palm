@@ -4361,10 +4361,10 @@ Respond ONLY with valid JSON, no markdown: {"greeting":"dramatic 1-sentence max 
 
       {/* Footer Links - shown after main result tabs */}
       {phase==="result"&&reading&&!partnerPhase&&(
-        <div style={{display:"flex",justifyContent:"center",gap:16,paddingTop:0,marginTop:-20,paddingBottom:60,borderTop:`1px solid ${C.border}`,flexWrap:"wrap"}}>
-          <Link to="/privacy-policy" style={{fontFamily:"Cinzel,serif",fontSize:11,color:C.gold,letterSpacing:1,textDecoration:"none",transition:"all 0.3s",fontWeight:700}} onMouseEnter={(e)=>e.target.style.color=C.rose} onMouseLeave={(e)=>e.target.style.color=C.gold}>Privacy Policy</Link>
+        <div style={{display:"flex",justifyContent:"center",gap:16,paddingTop:0,marginTop:-28,paddingBottom:60,borderTop:`1px solid ${C.border}`,flexWrap:"wrap"}}>
+          <Link to="/privacy-policy" style={{fontFamily:"Cinzel,serif",fontSize:11,color:C.gold,letterSpacing:1,textDecoration:"none",transition:"all 0.3s"}} onMouseEnter={(e)=>e.target.style.color=C.rose} onMouseLeave={(e)=>e.target.style.color=C.gold}>Privacy Policy</Link>
           <span style={{color:C.border}}>•</span>
-          <Link to="/terms-and-conditions" style={{fontFamily:"Cinzel,serif",fontSize:11,color:C.gold,letterSpacing:1,textDecoration:"none",transition:"all 0.3s",fontWeight:700}} onMouseEnter={(e)=>e.target.style.color=C.rose} onMouseLeave={(e)=>e.target.style.color=C.gold}>Terms & Conditions</Link>
+          <Link to="/terms-and-conditions" style={{fontFamily:"Cinzel,serif",fontSize:11,color:C.gold,letterSpacing:1,textDecoration:"none",transition:"all 0.3s"}} onMouseEnter={(e)=>e.target.style.color=C.rose} onMouseLeave={(e)=>e.target.style.color=C.gold}>Terms & Conditions</Link>
         </div>
       )}
       
