@@ -1,5 +1,6 @@
 // api/create-checkout-session.js
 import Stripe from 'stripe'
+import { coupons } from '../src/config/coupons.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
