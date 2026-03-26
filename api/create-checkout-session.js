@@ -3,6 +3,30 @@ import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
+// Coupon configuration
+const coupons = {
+  SAVE1: {
+    discountAmount: 1.00,
+    active: true,
+    description: "$1 off any reading",
+  },
+  SAVE2: {
+    discountAmount: 2.00,
+    active: true,
+    description: "$2 off any reading",
+  },
+  WELCOME: {
+    discountAmount: 0.50,
+    active: true,
+    description: "50¢ off for new users",
+  },
+  MYSTICAL: {
+    discountAmount: 1.50,
+    active: true,
+    description: "$1.50 off",
+  },
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST'])
@@ -26,8 +50,8 @@ export default async function handler(req, res) {
     // Validate coupon if provided
     let discountAmount = 0
     if (couponCode) {
-      const coupon = await validateCoupon(couponCode)
-      if (coupon) {
+      const coupon = coupons[couponCode.toUpperCase()]
+      if (coupon && coupon.active) {
         discountAmount = coupon.discountAmount * 100 // Convert to cents
       }
     }
@@ -66,21 +90,4 @@ export default async function handler(req, res) {
     console.error('Stripe error:', error)
     res.status(500).json({ error: error.message })
   }
-}
-
-// Validate coupon against your coupon list
-async function validateCoupon(code) {
-  // This will read from a coupons config file
-  // For now, return a simple structure
-  const coupons = {
-    SAVE1: { discountAmount: 1.00, active: true },
-    SAVE2: { discountAmount: 2.00, active: true },
-    WELCOME: { discountAmount: 0.50, active: true },
-  }
-
-  const coupon = coupons[code.toUpperCase()]
-  if (coupon && coupon.active) {
-    return coupon
-  }
-  return null
 }

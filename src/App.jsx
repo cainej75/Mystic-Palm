@@ -3429,6 +3429,43 @@ export default function MysticFortunes() {
     }
   },[partnerPhase]);
 
+  // Payment verification - check if user is returning from Stripe checkout
+  useEffect(() => {
+    const verifyPaymentOnReturn = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      if (!sessionId) return;
+      try {
+        console.log('Verifying payment with session:', sessionId);
+        const response = await fetch(`/api/verify-payment?session_id=${sessionId}`);
+        const data = await response.json();
+        if (data.valid) {
+          console.log('✅ Payment verified:', data);
+          if (data.productType === 'full_revelation') {
+            setFullPaid(true);
+            setDownloadType('full_revelation');
+            showToast('Payment successful! Your reading is ready to download.');
+          } else if (data.productType === 'partner_compatibility') {
+            setPartnerPaid(true);
+            setDownloadType('partner_compatibility');
+            showToast('Payment successful! Your compatibility reading is ready.');
+          }
+          setTimeout(() => {
+            setShowDownloadModal(true);
+          }, 500);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          console.error('❌ Payment verification failed');
+          showToast('Payment verification failed. Please contact support.');
+        }
+      } catch (error) {
+        console.error('Payment verification error:', error);
+        showToast('Error verifying payment. Please try again.');
+      }
+    };
+    verifyPaymentOnReturn();
+  }, []);
+
   // Validate user palm silently when captured
   // Validation handled by FreezeFrame
 

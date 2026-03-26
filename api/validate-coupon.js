@@ -1,5 +1,27 @@
 // api/validate-coupon.js
-import { coupons } from '../src/config/coupons.js'
+// Coupon configuration embedded here to avoid import path issues
+const coupons = {
+  SAVE1: {
+    discountAmount: 1.00,
+    active: true,
+    description: "$1 off any reading",
+  },
+  SAVE2: {
+    discountAmount: 2.00,
+    active: true,
+    description: "$2 off any reading",
+  },
+  WELCOME: {
+    discountAmount: 0.50,
+    active: true,
+    description: "50¢ off for new users",
+  },
+  MYSTICAL: {
+    discountAmount: 1.50,
+    active: true,
+    description: "$1.50 off",
+  },
+}
 
 export default function handler(req, res) {
   if (req.method !== 'POST') {

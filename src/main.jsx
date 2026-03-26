@@ -9,7 +9,17 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Router>
       <Routes>
+        {/* Main app */}
         <Route path="/" element={<MysticFortunes />} />
+        
+        {/* Payment success page - Stripe redirects here after payment */}
+        {/* Uses same component, payment verification happens via URL params */}
+        <Route path="/success" element={<MysticFortunes />} />
+        
+        {/* Payment cancelled page - user clicks "back" on Stripe checkout */}
+        <Route path="/cancelled" element={<MysticFortunes />} />
+        
+        {/* Policy pages */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
       </Routes>
