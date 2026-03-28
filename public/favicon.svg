@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <!-- Outer glow -->
+    <radialGradient id="outerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#b060ff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#4a00a0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Ball body gradient -->
+    <radialGradient id="ballGrad" cx="38%" cy="32%" r="62%">
+      <stop offset="0%" stop-color="#f0e8ff"/>
+      <stop offset="18%" stop-color="#c8a0ff"/>
+      <stop offset="50%" stop-color="#7030d0"/>
+      <stop offset="78%" stop-color="#3a0880"/>
+      <stop offset="100%" stop-color="#1a0040"/>
+    </radialGradient>
+    <!-- Inner mist glow -->
+    <radialGradient id="mistGrad" cx="45%" cy="55%" r="45%">
+      <stop offset="0%" stop-color="#80d8ff" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#a060ff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#4a00c0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Highlight -->
+    <radialGradient id="highlight" cx="32%" cy="26%" r="35%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#e0c8ff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#c090ff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Stand gradient -->
+    <linearGradient id="standGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2a0060"/>
+      <stop offset="40%" stop-color="#8040c0"/>
+      <stop offset="60%" stop-color="#c9a84c"/>
+      <stop offset="100%" stop-color="#3a0080"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Ambient outer pulse -->
+  <circle cx="32" cy="30" r="28" fill="url(#outerGlow)"/>
+
+  <!-- Stand base -->
+  <ellipse cx="32" cy="56" rx="14" ry="4" fill="url(#standGrad)" opacity="0.9"/>
+  <!-- Stand stem -->
+  <path d="M26,53 Q32,50 38,53 L36,47 Q32,46 28,47 Z" fill="url(#standGrad)" opacity="0.9"/>
+
+  <!-- Ball shadow under -->
+  <ellipse cx="32" cy="48" rx="15" ry="3.5" fill="#1a0040" opacity="0.5"/>
+
+  <!-- Crystal ball body -->
+  <circle cx="32" cy="30" r="21" fill="url(#ballGrad)" filter="url(#glow)"/>
+
+  <!-- Inner mist swirl -->
+  <circle cx="32" cy="32" r="14" fill="url(#mistGrad)"/>
+
+  <!-- Star sparkle inside -->
+  <g filter="url(#glow)" opacity="0.85">
+    <circle cx="28" cy="28" r="1.2" fill="#80f0ff"/>
+    <circle cx="36" cy="34" r="0.9" fill="#c0a0ff"/>
+    <circle cx="32" cy="38" r="1.0" fill="#80d0ff"/>
+    <circle cx="24" cy="36" r="0.7" fill="#ffffff"/>
+    <circle cx="38" cy="26" r="0.8" fill="#ffffff"/>
+  </g>
+
+  <!-- Main specular highlight -->
+  <circle cx="32" cy="30" r="21" fill="url(#highlight)"/>
+
+  <!-- Small bright highlight dot -->
+  <ellipse cx="26" cy="22" rx="4" ry="3" fill="white" opacity="0.7" filter="url(#softGlow)"/>
+  <ellipse cx="25" cy="21" rx="2" ry="1.5" fill="white" opacity="0.95"/>
+</svg>
