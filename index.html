@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Fix in-app browser height squashing -->
+    <style>
+      html {
+        height: 100%;
+        height: -webkit-fill-available;
+      }
+      body {
+        margin: 0;
+        background: #080510;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        min-height: 100dvh;
+      }
+      #root {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        min-height: 100dvh;
+      }
+    </style>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V4BD2BREHJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-V4BD2BREHJ');
+    </script>
+
+    <title>Mystic Fortunes — AI Palm Reading by Madame Zafira</title>
+    <meta name="description" content="Let Madame Zafira read the ancient lines of your palm. An AI-powered mystical fortune reading crafted for your phone. Discover your destiny." />
+    <link rel="canonical" href="https://www.mysticfortunes.ai/" />
+    <meta name="keywords" content="mystic fortunes, palm reading, AI fortune, palm reading app, Madame Zafira, fortune teller, destiny reading, mysticfortunes.ai" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.mysticfortunes.ai/" />
+    <meta property="og:title" content="Mystic Fortunes — AI Palm Reading" />
+    <meta property="og:description" content="Let Madame Zafira read the ancient lines of your palm. Discover what your destiny holds." />
+    <meta property="og:site_name" content="Mystic Fortunes" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Mystic Fortunes — AI Palm Reading" />
+    <meta name="twitter:description" content="Let Madame Zafira read the ancient lines of your palm. Discover what your destiny holds." />
+
+    <meta name="theme-color" content="#080510" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
