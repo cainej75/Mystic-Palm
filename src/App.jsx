@@ -99,13 +99,7 @@ const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral
 
   return (
     <div style={{position:"relative",width:"100%",margin:"0 auto"}} onContextMenu={e=>e.preventDefault()}>
-      {/* Outer aura */}
-      <div style={{
-        position:"absolute",inset:-4,borderRadius:20,
-        boxShadow:`0 0 60px ${glow}55, 0 0 120px ${glow}22`,
-        animation:"auraPulse 3s ease-in-out infinite",
-        pointerEvents:"none",zIndex:0,
-      }}/>
+
       {/* Main photo/video frame */}
       <div style={{
         position:"relative",borderRadius:18,overflow:"hidden",
@@ -114,7 +108,7 @@ const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral
         zIndex:1,
         width:"100%",
         paddingTop:"133.33%",
-        background:"#000",
+        background:"transparent",
       }}>
         {phase === "intro" ? (
           <img
@@ -135,7 +129,7 @@ const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral
           />
         ) : (
           <img
-            src={SERAPHINA_IMG}
+            src={phase === "result" ? "/fortune-teller-result.webp" : SERAPHINA_IMG}
             alt="Madame Zafira"
             style={{
               position:"absolute",
@@ -248,24 +242,24 @@ const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral
             </div>
           )}
           <div style={{
-            fontFamily:"IM Fell English,serif",
-            fontStyle:"italic",
-            fontSize:"clamp(20px, 5vw, 28px)",
-            color:C.gold,
-            opacity:0.9,
-            marginBottom:4,
-            letterSpacing:1,
-          }}>
-            I've been expecting you
-          </div>
-          <div style={{
             fontFamily:"Cinzel,serif",
             fontSize:"clamp(18px, 4vw, 24px)",
             color:C.gold,
             letterSpacing:4,
             textTransform:"uppercase",
+            marginBottom:4,
           }}>
             Madame Zafira
+          </div>
+          <div style={{
+            fontFamily:"IM Fell English,serif",
+            fontStyle:"italic",
+            fontSize:"clamp(15px, 4vw, 19px)",
+            color:C.gold,
+            opacity:0.9,
+            letterSpacing:1,
+          }}>
+            {phase === 'result' ? 'I See Everything' : "I've Been Expecting You"}
           </div>
           <div style={{
             width:60,height:1,
@@ -3061,10 +3055,10 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
 
         {/* ══ INTRO ══ */}
         {phase==="intro"&&(
-          <div style={{paddingTop:36,paddingBottom:0,animation:"fadeUp 0.8s ease both"}}>
-            <div style={{textAlign:"center",marginBottom:20}}>
-              <div style={{fontFamily:"Cinzel,serif",fontSize:"clamp(32px,8vw,54px)",fontWeight:700,color:C.gold,margin:"0 0 8px",lineHeight:1.1,animation:"goldGlow 3s ease-in-out infinite",letterSpacing:2,cursor:"pointer",userSelect:"none"}} onClick={devSkipToResult}>Mystic Fortunes</div>
-              <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:"clamp(20px,5vw,28px)",fontWeight:400,color:C.cream,margin:0,lineHeight:1.4,opacity:0.92}}>Ancient wisdom, modern magic</div>
+          <div style={{paddingTop:10,paddingBottom:0,animation:"fadeUp 0.8s ease both"}}>
+            <div style={{textAlign:"center",marginBottom:10}}>
+              <img src="/Mystic_Fortunes_Logo_cropped.webp" alt="Mystic Fortunes" onClick={devSkipToResult} style={{width:"clamp(260px,80vw,480px)",height:"auto",margin:"0 auto",display:"block",cursor:"pointer",userSelect:"none",filter:"drop-shadow(0 0 12px #c9a84c66)"}} />
+              <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:"clamp(15px,4vw,19px)",color:C.gold,letterSpacing:1.5,opacity:0.9,marginTop:5}}>Ancient Wisdom, Modern Magic</div>
             </div>
 
             {/* BIG Seraphina photo */}
@@ -3072,7 +3066,7 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
 
             
 
-            <button className="gold-btn" onClick={()=>{setPhase("details");}} style={{width:"100%",padding:"15px",fontSize:20,borderRadius:12,margin:"16px 0 0"}}>
+            <button className="gold-btn" onClick={()=>{setPhase("details");}} style={{width:"100%",padding:"15px",fontSize:20,borderRadius:12,margin:"16px 0 0",background:"linear-gradient(135deg,#3b0a6e,#8b2fc9,#c9a84c,#b0405a,#3b0a6e)",backgroundSize:"300%",animation:"shimmer 4s linear infinite",boxShadow:"0 0 24px #8b2fc988, 0 0 48px #c9a84c44",border:"1px solid #8b2fc966",color:"#fff"}}>
               🔮 Reveal My Fortune
             </button>
           </div>
@@ -3685,17 +3679,20 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
           <span style={{color:C.border}}>•</span>
           <Link to="/terms-and-conditions" target="_blank" className="footer-link">Terms & Conditions</Link>
           <span style={{color:C.border}}>•</span>
-          <div style={{position:"relative",display:"inline-block"}}>
-            <button onClick={()=>setShowBlogDropdown(!showBlogDropdown)} style={{background:"none",border:"none",color:"#ffe083",fontFamily:"Cinzel,serif",fontSize:11,letterSpacing:1,textDecoration:"none",cursor:"pointer",padding:0,transition:"color 0.3s"}} onMouseEnter={()=>setShowBlogDropdown(true)} onMouseLeave={()=>setShowBlogDropdown(false)}>
+          <div style={{position:"relative",display:"inline-block",paddingTop:4}} onMouseEnter={()=>setShowBlogDropdown(true)} onMouseLeave={()=>setShowBlogDropdown(false)}>
+            <button onClick={()=>setShowBlogDropdown(!showBlogDropdown)} style={{background:"none",border:"none",color:"#ffe083",fontFamily:"Cinzel,serif",fontSize:11,letterSpacing:1,textDecoration:"none",cursor:"pointer",padding:0,transition:"color 0.3s"}}>
               Madame Zafira's Insights ▼
             </button>
             {showBlogDropdown&&(
-              <div onMouseEnter={()=>setShowBlogDropdown(true)} onMouseLeave={()=>setShowBlogDropdown(false)} style={{position:"absolute",top:"100%",left:0,background:"#100c1a",border:`1px solid ${C.border}`,borderRadius:8,minWidth:220,zIndex:1000,marginTop:4,boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}>
+              <div style={{position:"absolute",bottom:"100%",left:0,background:"#100c1a",border:`1px solid ${C.border}`,borderRadius:8,minWidth:220,zIndex:1000,boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}>
                 <Link to="/blog/broken-life-line" className="footer-link" style={{display:"block",padding:"10px 16px",borderBottom:`1px solid ${C.border}`,textDecoration:"none"}}>
                   Broken Life Line
                 </Link>
-                <Link to="/blog/broken-heart-line" className="footer-link" style={{display:"block",padding:"10px 16px",textDecoration:"none"}}>
+                <Link to="/blog/broken-heart-line" className="footer-link" style={{display:"block",padding:"10px 16px",borderBottom:`1px solid ${C.border}`,textDecoration:"none"}}>
                   Broken Heart Line
+                </Link>
+                <Link to="/blog/palmistry-fate-line" className="footer-link" style={{display:"block",padding:"10px 16px",textDecoration:"none"}}>
+                  The Fate Line
                 </Link>
               </div>
             )}

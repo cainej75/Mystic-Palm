@@ -6,6 +6,8 @@ import MysticFortunes from './App'
 import PrivacyPolicy from './PrivacyPolicy'
 import TermsAndConditions from './TermsAndConditions'
 import BrokenLifeLine from './blog/posts/BrokenLifeLine'
+import BrokenHeartLine from './blog/posts/BrokenHeartLine'
+import FateLine from './blog/posts/FateLine'
 
 // Component to track page views with Google Analytics
 function PageTracker() {
@@ -20,6 +22,8 @@ function PageTracker() {
       '/privacy-policy': 'Privacy Policy — Mystic Fortunes',
       '/terms-and-conditions': 'Terms and Conditions — Mystic Fortunes',
       '/blog/broken-life-line': 'What Does a Broken Life Line Mean? — Madame Zafira\'s Insights',
+      '/blog/broken-heart-line': 'The Broken Heart Line in Palmistry — Madame Zafira\'s Insights',
+      '/blog/palmistry-fate-line': 'What Your Fate Line Really Says About Your Destiny — Madame Zafira\'s Insights',
     }
     
     // Get the title for current route, or default to home
@@ -62,6 +66,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
           {/* Blog — Madame Zafira's Insights */}
           <Route path="/blog/broken-life-line" element={<BrokenLifeLine />} />
+          <Route path="/blog/broken-heart-line" element={<BrokenHeartLine />} />
+          <Route path="/blog/palmistry-fate-line" element={<FateLine />} />
         </Routes>
       </Router>
     </InAppBrowserGate>
