@@ -4,9 +4,57 @@ import {
   generatePartnerCompatibility, generateFortune,
   generateCompatibility, generateShareText, getZodiac,
 } from './utils/fortuneEngine';
+import { getDailyFortunes } from './data/readings';
 import { compressImage, extractPalmLines, identifyPalmLines } from './utils/cvPipeline';
 import { Link } from "react-router-dom";
 import { CameraBlockedPage } from "./components/InAppBrowserGate";
+import NavDrawer from "./components/NavDrawer";
+import NatalInfoScreen from "./components/NatalInfoScreen";
+import WelcomeBack from "./components/WelcomeBack";
+import SoulmateQuestions from "./components/SoulmateQuestions";
+import { saveProfile, getProfile, markScanComplete } from "./utils/mysticStore";
+// ═══════════════════════════════════════════════════════
+// ASTROLOGY & NUMEROLOGY UTILITIES
+// ═══════════════════════════════════════════════════════
+const ZODIAC_META = {
+  Aries:{element:"Fire",modality:"Cardinal",ruler:"Mars",emoji:"♈"},
+  Taurus:{element:"Earth",modality:"Fixed",ruler:"Venus",emoji:"♉"},
+  Gemini:{element:"Air",modality:"Mutable",ruler:"Mercury",emoji:"♊"},
+  Cancer:{element:"Water",modality:"Cardinal",ruler:"Moon",emoji:"♋"},
+  Leo:{element:"Fire",modality:"Fixed",ruler:"Sun",emoji:"♌"},
+  Virgo:{element:"Earth",modality:"Mutable",ruler:"Mercury",emoji:"♍"},
+  Libra:{element:"Air",modality:"Cardinal",ruler:"Venus",emoji:"♎"},
+  Scorpio:{element:"Water",modality:"Fixed",ruler:"Pluto",emoji:"♏"},
+  Sagittarius:{element:"Fire",modality:"Mutable",ruler:"Jupiter",emoji:"♐"},
+  Capricorn:{element:"Earth",modality:"Cardinal",ruler:"Saturn",emoji:"♑"},
+  Aquarius:{element:"Air",modality:"Fixed",ruler:"Uranus",emoji:"♒"},
+  Pisces:{element:"Water",modality:"Mutable",ruler:"Neptune",emoji:"♓"},
+};
+const SIGN_NAMES=["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+function getJulianDay(year,month,day,hour=12){const a=Math.floor((14-month)/12);const y=year+4800-a;const m=month+12*a-3;return day+Math.floor((153*m+2)/5)+365*y+Math.floor(y/4)-Math.floor(y/100)+Math.floor(y/400)-32045+(hour-12)/24;}
+function calcMoonSign(year,month,day){const jd=getJulianDay(year,month,day);const T=(jd-2451545.0)/36525;let lon=218.3165+481267.8813*T;lon=((lon%360)+360)%360;return SIGN_NAMES[Math.floor(lon/30)];}
+function calcRisingSign(hour,minute,birthYear,birthMonth,birthDay,latDeg){const jd=getJulianDay(birthYear,birthMonth,birthDay,hour+minute/60);const T=(jd-2451545.0)/36525;let gmst=280.46061837+360.98564736629*(jd-2451545)+0.000387933*T*T;gmst=((gmst%360)+360)%360;const eps=23.4393-0.0130*T;const latR=latDeg*Math.PI/180;const epR=eps*Math.PI/180;const lstR=gmst*Math.PI/180;let ascLon=Math.atan2(-Math.cos(lstR),Math.sin(lstR)*Math.cos(epR)+Math.tan(latR)*Math.sin(epR))*180/Math.PI;ascLon=((ascLon%360)+360)%360;return SIGN_NAMES[Math.floor(ascLon/30)];}
+function calcLifePath(day,month,year){const digits=String(day+month+year).split('').map(Number);let sum=digits.reduce((a,b)=>a+b,0);while(sum>9&&sum!==11&&sum!==22&&sum!==33){sum=String(sum).split('').map(Number).reduce((a,b)=>a+b,0);}return sum;}
+const CHINESE_ZODIAC=["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
+function calcChineseZodiac(year){return CHINESE_ZODIAC[(year-4)%12];}
+function buildAstroProfile(birthDate,birthTime,birthPlaceData){
+  if(!birthDate?.day)return null;
+  const{day,month,year}=birthDate;
+  const zodiac=SIGN_NAMES[getZodiac(birthDate)?.index]||getZodiac(birthDate)?.sign||"";
+  const meta=ZODIAC_META[zodiac]||{};
+  const moonSign=calcMoonSign(year,month,day);
+  const lifePath=calcLifePath(day,month,year);
+  const chinese=calcChineseZodiac(year);
+  let risingSign=null;
+  if(birthTime&&birthTime!=="unknown"&&birthPlaceData?.latitude){
+    const[h,m]=birthTime.split(":").map(Number);
+    risingSign=calcRisingSign(h,m||0,year,month,day,birthPlaceData.latitude);
+  }
+  return{sunSign:zodiac,moonSign,risingSign,element:meta.element||"",modality:meta.modality||"",rulingPlanet:meta.ruler||"",lifePath,chineseZodiac:chinese,birthPlace:birthPlaceData?.name||"",birthTime:birthTime||null};
+}
+
+import PalmScanChoice from "./components/PalmScanChoice";
+import PalmUploadScreen from "./components/PalmUploadScreen";
 
 // Lazy load modals - only loaded when user opens them
 const PaymentModal = lazy(() => import("./components/PaymentModal"));
@@ -69,6 +117,69 @@ const Candle = React.memo(function Candle({style={}}) {
 });
 
 // Mystical ambient music using Web Audio API — smooth, no crackling
+
+const CrystalBallOracle = React.memo(function CrystalBallOracle({ speaking, mood="neutral" }) {
+  const glow = mood==="warning" ? C.rose : mood==="gift" ? C.teal : C.gold;
+  const purpleGlow = "rgba(160,100,255,0.7)";
+  const goldGlow   = `${glow}bb`;
+
+  return (
+    <div style={{position:"relative",width:"100%",margin:"0 auto"}} onContextMenu={e=>e.preventDefault()}>
+      <div style={{
+        position:"relative",borderRadius:18,overflow:"hidden",
+        border:`2px solid ${glow}66`,
+        boxShadow: speaking
+          ? `0 0 40px 12px ${purpleGlow}, 0 0 80px 24px ${goldGlow}, 0 12px 48px rgba(0,0,0,0.7)`
+          : `0 0 24px 6px rgba(160,100,255,0.35), 0 0 48px 12px ${glow}44, 0 12px 48px rgba(0,0,0,0.7)`,
+        animation: speaking ? "auraPulse 0.9s ease-in-out infinite" : "crystalPulse 3s ease-in-out infinite",
+        transition:"box-shadow 0.6s ease",
+        zIndex:1,
+        width:"100%",
+        paddingTop:"133.33%",
+        background:"#080510",
+      }}>
+        <img
+          src="/crystal-ball-fortune.webp"
+          alt="Crystal Ball Oracle"
+          style={{
+            position:"absolute",
+            top:0,left:0,
+            width:"100%",height:"100%",
+            objectFit:"cover",
+            objectPosition:"center",
+            display:"block",
+            filter: speaking
+              ? "brightness(1.18) saturate(1.3)"
+              : "brightness(1.0) saturate(1.1)",
+            transition:"filter 0.5s ease",
+          }}
+        />
+        {/* Vignette */}
+        <div style={{
+          position:"absolute",inset:0,
+          background:"radial-gradient(ellipse at center, transparent 45%, rgba(8,5,16,0.5) 100%)",
+          pointerEvents:"none",
+        }}/>
+        {/* Inner purple aura — always on */}
+        <div style={{
+          position:"absolute",inset:0,
+          background:`radial-gradient(ellipse at 50% 45%, ${purpleGlow.replace("0.7","0.08")} 0%, transparent 65%)`,
+          animation:"auraPulse 3s ease-in-out infinite",
+          pointerEvents:"none",
+        }}/>
+        {/* Intensified glow ring when speaking */}
+        {speaking && (
+          <div style={{
+            position:"absolute",inset:0,
+            background:`radial-gradient(ellipse at 50% 40%, rgba(201,168,76,0.15) 0%, rgba(160,100,255,0.1) 40%, transparent 70%)`,
+            animation:"auraPulse 0.8s ease-in-out infinite",
+            pointerEvents:"none",
+          }}/>
+        )}
+      </div>
+    </div>
+  );
+});
 
 const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral", videoRef, muted, setMuted }) {
   const glow = mood==="warning" ? C.rose : mood==="gift" ? C.teal : C.gold;
@@ -242,6 +353,17 @@ const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral
             </div>
           )}
           <div style={{
+            fontFamily:"IM Fell English,serif",
+            fontStyle:"italic",
+            fontSize:"clamp(14px, 3.5vw, 17px)",
+            color:C.gold,
+            opacity:0.85,
+            letterSpacing:1,
+            marginBottom:4,
+          }}>
+            {phase === 'result' ? 'I See Everything' : "I've Been Expecting You"}
+          </div>
+          <div style={{
             fontFamily:"Cinzel,serif",
             fontSize:"clamp(18px, 4vw, 24px)",
             color:C.gold,
@@ -250,16 +372,6 @@ const Seraphina = React.memo(function Seraphina({ speaking, phase, mood="neutral
             marginBottom:4,
           }}>
             Madame Zafira
-          </div>
-          <div style={{
-            fontFamily:"IM Fell English,serif",
-            fontStyle:"italic",
-            fontSize:"clamp(15px, 4vw, 19px)",
-            color:C.gold,
-            opacity:0.9,
-            letterSpacing:1,
-          }}>
-            {phase === 'result' ? 'I See Everything' : "I've Been Expecting You"}
           </div>
           <div style={{
             width:60,height:1,
@@ -399,7 +511,7 @@ const ShareCard = React.memo(function ShareCard({reading, onOpenFullscreen, full
   );
 });
 
-const FullScreenShareCard = React.memo(function FullScreenShareCard({reading, userName, birthDate, onClose, todayFortune}) {
+const FullScreenShareCard = React.memo(function FullScreenShareCard({reading, userName, birthDate, onClose, todayFortune, onSaved}) {
   const shareCardRef = useRef(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -446,6 +558,7 @@ const FullScreenShareCard = React.memo(function FullScreenShareCard({reading, us
       
       setSaving(false);
       setSaved(true);
+      if(onSaved) onSaved();
     } catch (err) {
       console.error('Save failed:', err);
       setSaving(false);
@@ -457,7 +570,7 @@ const FullScreenShareCard = React.memo(function FullScreenShareCard({reading, us
       <button onClick={onClose} style={{position:"fixed",top:20,right:20,background:"none",border:`2px solid ${C.gold}`,color:C.gold,borderRadius:"50%",width:40,height:40,fontSize:24,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1001}}>×</button>
       
       {/* CARD — no button inside so capture is clean */}
-      <div ref={shareCardRef} style={{maxWidth:330,width:"100%",background:"#0d0920",border:"3px solid #c9a84c",borderRadius:20,padding:"14px 10px",boxShadow:"0 0 40px rgba(201,168,76,0.3)"}}>
+      <div ref={shareCardRef} style={{maxWidth:330,width:"100%",background:"#0d0920",border:"3px solid #c9a84c",borderRadius:20,padding:"14px 10px"}}>
         
         {/* Heading */}
         <div style={{textAlign:"center",marginBottom:12}}>
@@ -958,7 +1071,7 @@ const PalmScanScreen = React.memo(function PalmScanScreen({ palmImage, palmLandm
 });
 
 
-const FullscreenCamera = React.memo(function FullscreenCamera({ canvasRef, onCapture, onCancel }) {
+const FullscreenCamera = React.memo(function FullscreenCamera({ canvasRef, onCapture, onCancel, onUpload }) {
   const videoRef    = useRef(null);
   const overlayRef  = useRef(null);
   const streamRef   = useRef(null);
@@ -1406,7 +1519,7 @@ const FullscreenCamera = React.memo(function FullscreenCamera({ canvasRef, onCap
   const pct = Math.round(progress*100);
   const col = progress>=1?"#c090ff":progress>0.5?"#ffe566":"#ffcc44";
 
-  if (cameraFailed) return <CameraBlockedPage />;
+  if (cameraFailed) return <CameraBlockedPage onUpload={onUpload} />;
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:50,background:"#000",display:"flex",flexDirection:"column"}}>
@@ -1416,23 +1529,39 @@ const FullscreenCamera = React.memo(function FullscreenCamera({ canvasRef, onCap
         style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
       <canvas ref={canvasRef}
         style={{display:"none"}}/>
+
+      {/* Top bar — upload button left, % counter right */}
       <div style={{position:"relative",zIndex:3,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px 8px",background:"linear-gradient(rgba(0,0,0,0.85),transparent)"}}>
-        <button onClick={onCancel} style={{background:"rgba(0,0,0,0.6)",border:"1px solid rgba(255,210,80,0.7)",color:"#ffe566",borderRadius:20,padding:"8px 18px",fontFamily:"Cinzel,serif",fontSize:11,cursor:"pointer",letterSpacing:1}}>✕ Cancel</button>
-        <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:progress>=1?"#c090ff":"#ffe566",letterSpacing:3,fontWeight:700,textShadow:progress>=1?"0 0 12px #c090ff":"0 0 12px #ffe566"}}>LEFT PALM SCAN</div>
-        <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:col,letterSpacing:1,minWidth:44,textAlign:"right",fontWeight:700}}>{pct}%</div>
+        {onUpload?(
+          <button onClick={onUpload} style={{
+            padding:"9px 18px",
+            background:"linear-gradient(135deg,#1a0a2e,#2e1250,#1a0a2e)",
+            border:"2px solid #c9a84c",borderRadius:20,
+            fontFamily:"Cinzel,serif",fontSize:11,fontWeight:700,
+            letterSpacing:1,color:"#e8d5b8",cursor:"pointer",
+            boxShadow:"0 3px 16px rgba(201,168,76,0.3)",
+          }}>
+            🖐️ Upload Instead
+          </button>
+        ):<div/>}
+        <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:col,letterSpacing:1,fontWeight:700}}>{pct}%</div>
       </div>
 
-      <div style={{position:"relative",zIndex:3,padding:"8px 48px 0"}}>        <div style={{height:4,background:"rgba(255,255,255,0.08)",borderRadius:2,overflow:"hidden"}}>
+      {/* Progress bar */}
+      <div style={{position:"relative",zIndex:3,padding:"8px 48px 0"}}>
+        <div style={{height:4,background:"rgba(255,255,255,0.08)",borderRadius:2,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,rgba(201,168,76,0.4),${col})`,borderRadius:2,transition:"width 0.12s",boxShadow:`0 0 12px ${col}`}}/>
         </div>
       </div>
+
+      {/* Guidance message — pinned to bottom, below silhouette */}
       <div style={{position:"absolute",bottom:40,left:0,right:0,zIndex:3,display:"flex",justifyContent:"center",padding:"0 20px"}}>
         <div style={{background:"rgba(0,0,0,0.78)",border:`2px solid ${col}`,borderRadius:30,padding:"12px 30px",maxWidth:380,textAlign:"center",backdropFilter:"blur(12px)",transition:"border-color 0.4s"}}>
           <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:20,color:progress>=1?"#c090ff":"#e8d5b8",margin:0,fontWeight:500,transition:"color 0.4s"}} key={msg}>
             {(() => {
               const words = msg.split(/(\bleft\b|\brear\b|\binside\b|\byou\b)/gi);
-              return words.map((word, i) => 
-                /^(left|rear|inside|you)$/i.test(word) 
+              return words.map((word, i) =>
+                /^(left|rear|inside|you)$/i.test(word)
                   ? <span key={i} style={{fontWeight:700,color:"#ffff00"}}>{word}</span>
                   : word
               );
@@ -1480,9 +1609,7 @@ const DetailsPage = React.memo(function DetailsPage({ onSubmit, onBack }) {
     <div style={{paddingTop:40,paddingBottom:60,animation:"fadeUp 0.6s ease both"}}>
       {/* Heading */}
       <div style={{textAlign:"center",marginBottom:28}}>
-        <div style={{fontFamily:"Cinzel,serif",fontSize:28,color:C.gold,letterSpacing:3,marginBottom:14,fontWeight:700,textShadow:"0 0 20px rgba(201,168,76,0.4)"}}>
-          Mystic Fortunes
-        </div>
+        <img src="/Mystic_Fortunes_Logo_cropped.webp" alt="Mystic Fortunes" style={{width:"clamp(180px,60vw,280px)",height:"auto",display:"block",margin:"0 auto 14px",filter:"drop-shadow(0 0 10px #c9a84c55)"}}/>
         <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:20,color:C.cream,margin:0,lineHeight:1.6,opacity:0.92}}>
           Madame Zafira requires your details<br/>in order to see your future
         </p>
@@ -2086,24 +2213,22 @@ const BiometricScan = React.memo(function BiometricScan({ palmImage, palmLandmar
 });
 
 
-function PartnerCompatibilityResult({ reading, userName, partnerName, nameDisplayOrder, onBack, setActiveTab }) {
+function PartnerCompatibilityResult({ reading, userName, partnerName, nameDisplayOrder, onBack, setActiveTab, pdfPaid, pdfGenerating, pdfNarrative, onPDFPayment, birthDate, partnerBirthDate, soulmateAnswers, soulmateJustCurious }) {
   const cardRef = useRef(null);
   const pageRef = useRef(null);
   const [shared, setShared] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [savingPage, setSavingPage] = useState(false);
-  const [muteAudio, setMuteAudio] = useState(true);
   const [showLeaveWarning, setShowLeaveWarning] = useState(false);
   const [pendingLeave, setPendingLeave] = useState(null);
+  const [activeResultTab, setActiveResultTab] = useState("soulmate");
+  const [deepPDFDownloaded, setDeepPDFDownloaded] = useState(false);
 
   const gold = "#c9a84c";
   const rose = "#b0405a";
   const cream = "#e8d5b8";
-  const mutedColor = "#6a5870";
 
   const score     = reading?.score     || 88;
   const insight   = reading?.insight   || "The universe has aligned your paths in a profound and lasting way.";
-  const alignment = reading?.alignment || "Your connection carries a depth that transcends the ordinary.";
   const today     = new Date();
   const dateStr   = today.toLocaleDateString("en-AU", {day:"numeric", month:"long", year:"numeric"});
   const MONTHS    = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -2125,42 +2250,12 @@ function PartnerCompatibilityResult({ reading, userName, partnerName, nameDispla
     return window.html2canvas(cardRef.current, {scale:2, useCORS:true, backgroundColor:"#080510", logging:false});
   };
 
-  const loadHtml2Canvas = async () => {
-    if (!window.html2canvas) {
-      await new Promise((res,rej) => {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-    await new Promise(r => setTimeout(r, 300));
-  };
-
-  const savePDF = async () => {
-    setSavingPage(true);
-    try {
-      const { generatePartnerCompatibilityPDF } = await lazyImportPDFGenerators();
-      await generatePartnerCompatibilityPDF(reading, name1, name2, score, alignment);
-    } catch(e) { console.error(e); }
-    setSavingPage(false);
-  };
-
   const handleLeave = useCallback((leaveCallback) => {
-    // Only show warning if share card hasn't been saved
-    if (!shared) {
-      setShowLeaveWarning(true);
-      setPendingLeave(() => leaveCallback);
-    } else {
-      // If already saved, leave without warning
-      leaveCallback();
-    }
+    if (!shared) { setShowLeaveWarning(true); setPendingLeave(() => leaveCallback); }
+    else leaveCallback();
   }, [shared]);
 
-  const confirmLeave = () => {
-    setShowLeaveWarning(false);
-    if (pendingLeave) pendingLeave();
-  };
+  const confirmLeave = () => { setShowLeaveWarning(false); if (pendingLeave) pendingLeave(); };
 
   const shareConnection = async () => {
     if (capturing || shared) return;
@@ -2171,14 +2266,22 @@ function PartnerCompatibilityResult({ reading, userName, partnerName, nameDispla
       const a = document.createElement("a");
       a.download = "cosmic-connection.png";
       a.href = url;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      setCapturing(false);
-      setShared(true);
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setCapturing(false); setShared(true);
     } catch(e) { console.error(e); setCapturing(false); }
   };
+
+  // PDF section headings for blurred preview
+  const Footer = () => (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,marginTop:40,paddingTop:20,paddingBottom:16,borderTop:"1px solid rgba(201,168,76,0.15)"}}>
+      <p style={{fontFamily:"Cinzel,serif",fontSize:"clamp(13px,3.5vw,16px)",color:"rgba(201,168,76,0.85)",margin:0,letterSpacing:"2px",textShadow:"0 0 12px rgba(201,168,76,0.4)"}}>🔮 MysticFortunes.AI</p>
+      <div style={{display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap"}}>
+        <a href="/privacy-policy" target="_blank" className="footer-link">Privacy Policy</a>
+        <span style={{color:"#2e1f40"}}>•</span>
+        <a href="/terms-and-conditions" target="_blank" className="footer-link">Terms & Conditions</a>
+      </div>
+    </div>
+  );
 
   return (
     <div ref={pageRef} style={{position:"fixed",inset:0,zIndex:9999,background:"#080510",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
@@ -2189,17 +2292,11 @@ function PartnerCompatibilityResult({ reading, userName, partnerName, nameDispla
             <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
             <h3 style={{fontFamily:"Cinzel,serif",fontSize:20,color:"#b0405a",margin:"0 0 14px",fontWeight:700}}>Before You Leave</h3>
             <p style={{fontFamily:"Crimson Text,serif",fontSize:16,color:"#e8d5b8",lineHeight:1.8,margin:"0 0 24px"}}>
-              Once you leave this page, your reading will be gone forever. Make sure you have saved your <strong style={{color:"#c9a84c"}}>share card</strong> before continuing.
+              Once you leave this page, your reading will be gone forever. Make sure you have saved your <strong style={{color:"#c9a84c"}}>share card</strong>{pdfNarrative&&!deepPDFDownloaded&&<> and downloaded your <strong style={{color:"#c9a84c"}}>PDF</strong></>} before continuing.
             </p>
             <div style={{display:"flex",gap:12}}>
-              <button onClick={()=>setShowLeaveWarning(false)}
-                style={{flex:1,padding:"12px",background:"#c9a84c",color:"#080510",border:"none",borderRadius:8,fontFamily:"Cinzel,serif",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
-                GO BACK & SAVE
-              </button>
-              <button onClick={confirmLeave}
-                style={{flex:1,padding:"12px",background:"rgba(176,64,90,0.3)",color:"#e8d5b8",border:"1px solid #b0405a",borderRadius:8,fontFamily:"Cinzel,serif",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
-                LEAVE ANYWAY
-              </button>
+              <button onClick={()=>setShowLeaveWarning(false)} style={{flex:1,padding:"12px",background:"#c9a84c",color:"#080510",border:"none",borderRadius:8,fontFamily:"Cinzel,serif",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>GO BACK & SAVE</button>
+              <button onClick={confirmLeave} style={{flex:1,padding:"12px",background:"rgba(176,64,90,0.3)",color:"#e8d5b8",border:"1px solid #b0405a",borderRadius:8,fontFamily:"Cinzel,serif",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:1}}>LEAVE ANYWAY</button>
             </div>
           </div>
         </div>
@@ -2207,97 +2304,250 @@ function PartnerCompatibilityResult({ reading, userName, partnerName, nameDispla
 
       <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px 24px"}}>
 
-        {/* Add Seraphina and tabs at top */}
-        <Seraphina speaking={false} phase="result" mood="mystical" videoRef={{current:null}} muted={muteAudio} setMuted={setMuteAudio}/>
-        
-        {/* Tabs */}
-        <div style={{display:"flex",borderBottom:`1px solid rgba(201,168,76,0.3)`,marginBottom:12,gap:6}}>
-          {[["extras","🃏","Today's Fortune"],["lines","💎","Full Revelation"],["reading","💖","Partner Compatibility"]].map(([id,icon,label])=>(
-            <button key={id} onClick={()=>{if(id!=="reading"){handleLeave(()=>{onBack();setActiveTab(id);});}}} style={{flex:1,background:"reading"===id?`#c9a84c22`:"rgba(201,168,76,0.08)",border:`1px solid ${"reading"===id?"#c9a84c":"rgba(201,168,76,0.3)"}`,borderBottom:`3px solid ${"reading"===id?"#c9a84c":"transparent"}`,color:"reading"===id?"#c9a84c":"rgba(201,168,76,0.6)",fontFamily:"Cinzel,serif",fontSize:10,letterSpacing:1,textTransform:"uppercase",padding:"10px 8px",cursor:"pointer",transition:"all 0.3s ease",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderRadius:"8px 8px 0 0",boxShadow:"reading"===id?`0 0 15px #c9a84c44`:"none",animation:"reading"===id?"tabPulse 2s ease-in-out infinite":"none",transform:"none"}}>
-              <span style={{fontSize:20,transition:"transform 0.3s ease"}}>{icon}</span>
-              <span style={{fontWeight:"reading"===id?700:600,color:"reading"===id?"#c9a84c":"rgba(201,168,76,0.6)"}}>{label}</span>
+        {/* Madame Zafira photo — no glow, crystal ball overlay glow only */}
+        <div style={{position:"relative",width:"100%",borderRadius:18,overflow:"hidden",border:"2px solid rgba(201,168,76,0.3)",marginBottom:0}}>
+          <img
+            src="/fortune-teller-result.webp"
+            alt="Madame Zafira"
+            style={{width:"100%",height:"auto",display:"block",objectFit:"cover",objectPosition:"center top"}}
+          />
+          {/* Crystal ball glow overlay — bottom-center where the ball sits */}
+          <div style={{position:"absolute",bottom:"8%",left:"50%",transform:"translateX(-50%)",width:"38%",paddingBottom:"38%",borderRadius:"50%",background:"radial-gradient(circle,rgba(160,100,255,0.45) 0%,rgba(120,60,200,0.2) 50%,transparent 70%)",animation:"auraPulse 2.5s ease-in-out infinite",pointerEvents:"none"}}/>
+          {/* Subtle bottom vignette */}
+          <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at center,transparent 50%,rgba(8,5,16,0.45) 100%)",pointerEvents:"none"}}/>
+        </div>
+
+        {/* 2 Tabs */}
+        <div style={{display:"flex",borderBottom:`1px solid rgba(201,168,76,0.3)`,marginBottom:16,gap:4}}>
+          {[["soulmate","💖💖","Soulmate Connection"],["deep","💗💗💗","Deeper Connection"]].map(([id,icon,label])=>(
+            <button key={id} onClick={()=>setActiveResultTab(id)}
+              style={{flex:1,background:activeResultTab===id?`rgba(201,168,76,0.14)`:"rgba(201,168,76,0.05)",border:`1px solid ${activeResultTab===id?"#c9a84c":"rgba(201,168,76,0.25)"}`,borderBottom:`3px solid ${activeResultTab===id?"#c9a84c":"transparent"}`,color:activeResultTab===id?"#c9a84c":"rgba(201,168,76,0.55)",fontFamily:"Cinzel,serif",fontSize:10,letterSpacing:1,textTransform:"uppercase",padding:"10px 8px",cursor:"pointer",transition:"all 0.3s ease",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderRadius:"8px 8px 0 0",boxShadow:activeResultTab===id?`0 0 15px rgba(201,168,76,0.3)`:"none"}}>
+              <span style={{fontSize:18}}>{icon}</span>
+              <span style={{fontWeight:activeResultTab===id?700:500}}>{label}</span>
             </button>
           ))}
         </div>
 
-        <div style={{textAlign:"center",marginBottom:20}}>
-          <h2 style={{fontFamily:"Cinzel,serif",fontSize:26,fontWeight:700,color:gold,margin:"0 0 12px",letterSpacing:2}}>
-            Your Connection
-          </h2>
-          <div style={{fontSize:28,marginBottom:12,letterSpacing:4}}>&#x1F497;&#x1F497;&#x1F497;</div>
-        </div>
-
-{/* Harmony score box removed — shown on share card instead */}
-
-{/* Your Alignment section — temporarily hidden, data intact */}
-
-        <div ref={cardRef} style={{background:"linear-gradient(160deg,#0c0818 0%,#100c1a 50%,#0a0614 100%)",border:"1px solid rgba(201,168,76,0.5)",borderRadius:18,padding:"28px 22px 24px",marginBottom:14,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#c9a84c,transparent)"}}/>
-
-          <div style={{textAlign:"center",marginBottom:4,position:"relative"}}>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:16,fontWeight:700,color:gold,letterSpacing:3}}>
-              &#x2726; Mystic Fortunes &#x2726;
+        {/* ── SOULMATE CONNECTION TAB ── */}
+        {activeResultTab==="soulmate"&&(
+          <div style={{animation:"fadeIn 0.3s ease both"}}>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <h2 style={{fontFamily:"Cinzel,serif",fontSize:24,fontWeight:700,color:gold,margin:"0 0 10px",letterSpacing:2}}>Your Connection</h2>
+              <div style={{fontSize:28,marginBottom:4}}>💖💖</div>
             </div>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:11,color:gold,letterSpacing:4,marginTop:4,opacity:0.85}}>
-              Soulmate Connection
+
+            {/* Share card */}
+            <div ref={cardRef} style={{background:"linear-gradient(160deg,#0c0818 0%,#100c1a 50%,#0a0614 100%)",border:"3px solid rgba(201,168,76,0.85)",borderRadius:18,padding:"28px 22px 24px",marginBottom:14,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#c9a84c,transparent)"}}/>
+              <div style={{textAlign:"center",marginBottom:4}}>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:16,fontWeight:700,color:gold,letterSpacing:3}}>✦ Mystic Fortunes ✦</div>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:11,color:gold,letterSpacing:4,marginTop:4,opacity:0.85}}>Soulmate Connection</div>
+              </div>
+              <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.4),transparent)",margin:"10px 0 14px"}}/>
+              <div style={{textAlign:"center",marginBottom:12}}>
+                {onOneLine ? (
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:20,color:rose,letterSpacing:1,fontWeight:600}}>{name1} &amp; {name2}</div>
+                ) : (
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:20,color:rose,letterSpacing:1,fontWeight:600,lineHeight:1.6,display:"flex",flexDirection:"column",alignItems:"center"}}>
+                    <div>{name1}</div><div style={{fontSize:13,color:rose,letterSpacing:3}}>&</div><div>{name2}</div>
+                  </div>
+                )}
+              </div>
+              <div style={{textAlign:"center",marginBottom:16}}>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:9,color:gold,letterSpacing:3,textTransform:"uppercase",marginBottom:4}}>Date</div>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:12,color:cream}}>{dateStr}</div>
+              </div>
+              <div style={{textAlign:"center",marginBottom:4}}>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:52,fontWeight:700,color:rose,lineHeight:1}}>{score}%</div>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:10,color:gold,letterSpacing:3,textTransform:"uppercase",marginTop:4}}>Harmony Score</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8,margin:"14px 0"}}>
+                <div style={{flex:1,height:1,background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.3))"}}/>
+                <span style={{color:gold,fontSize:10}}>✦</span>
+                <div style={{flex:1,height:1,background:"linear-gradient(90deg,rgba(201,168,76,0.3),transparent)"}}/>
+              </div>
+              <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:16,color:cream,margin:"0 0 20px",lineHeight:1.75,textAlign:"center"}}>"{insight}"</p>
+              <div style={{textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <span style={{fontSize:16}}>🔮</span>
+                <span style={{fontFamily:"Cinzel,serif",fontSize:9,color:"#c9a84c",letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>MYSTICFORTUNES.AI</span>
+              </div>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#c9a84c,transparent)"}}/>
             </div>
-          </div>
 
-          <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.4),transparent)",margin:"10px 0 14px"}}/>
+            <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:17,color:"#a080b0",textAlign:"center",lineHeight:1.7,margin:"0 0 20px",padding:"0 8px"}}>
+              Your cosmic alignment shifts with each lunar cycle. Return in {nextMonth} as new celestial patterns emerge — the tides may reveal a deeper dimension of your connection.
+            </p>
 
-          <div style={{textAlign:"center",marginBottom:12,position:"relative"}}>
-            {onOneLine ? (
-              <div style={{fontFamily:"Cinzel,serif",fontSize:20,color:rose,letterSpacing:1,fontWeight:600}}>{name1} &amp; {name2}</div>
-            ) : (
-              <div style={{fontFamily:"Cinzel,serif",fontSize:20,color:rose,letterSpacing:1,fontWeight:600,lineHeight:1.6,display:"flex",flexDirection:"column",alignItems:"center"}}>
-                <div>{name1}</div>
-                <div style={{fontSize:13,color:rose,letterSpacing:3}}>&</div>
-                <div>{name2}</div>
+            <button onClick={shareConnection} disabled={capturing||shared}
+              style={{width:"100%",padding:"16px",fontSize:15,borderRadius:12,background:shared?"#1a6b4a":capturing?"#5c3a50":"linear-gradient(135deg,#c9a84c,#9d7d2e)",border:"none",color:shared?"white":"#080510",fontFamily:"Cinzel,serif",letterSpacing:1.5,cursor:capturing||shared?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:12,transition:"all 0.3s",fontWeight:600}}>
+              <span style={{fontSize:20}}>💾</span>
+              {shared ? "✓ Share Card Saved" : capturing ? "✦ Saving..." : "💾 Save Share Card"}
+            </button>
+
+            <p style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#e05555",textAlign:"center",margin:"0 0 20px",lineHeight:1.6,fontWeight:600,letterSpacing:0.5}}>
+              ⚠️ Save your share card now — once you leave this page your connection reading will be gone forever.
+            </p>
+
+            {/* Deeper Connection upsell */}
+            {!pdfPaid&&(
+              <div style={{background:"linear-gradient(135deg,rgba(80,30,120,0.25),rgba(30,10,60,0.4))",border:"1px solid rgba(148,90,210,0.5)",borderRadius:14,padding:"20px 18px",marginBottom:16}}>
+                <div style={{textAlign:"center",marginBottom:14}}>
+                  <h3 style={{fontFamily:"Cinzel,serif",fontSize:16,color:"#c090ff",margin:"0 0 8px",letterSpacing:1,fontWeight:700}}>Want to Know More?</h3>
+                  <p style={{fontFamily:"Crimson Text,serif",fontSize:15,color:cream,margin:"0 0 12px",lineHeight:1.7}}>
+                    Unlock your <strong style={{color:"#c090ff"}}>Deeper Connection</strong> reading — real astrology, the honest truth about your bond, and a personal message from Madame Zafira written only for the two of you.
+                  </p>
+                  <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16,textAlign:"left"}}>
+                    {["💫 Celestial compatibility — your signs, elements & love languages","💗 The language of love — how you each love & what you need","⚡ The tension between you, turned to wisdom","🌟 Your path forward & a message from the stars"].map(f=>(
+                      <div key={f} style={{fontFamily:"Crimson Text,serif",fontSize:14,color:"rgba(232,213,184,0.85)"}}>{f}</div>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={onPDFPayment}
+                  style={{width:"100%",padding:"14px",fontSize:15,borderRadius:11,background:"linear-gradient(135deg,#3b0a6e,#8b2fc9,#b0405a,#3b0a6e)",backgroundSize:"300%",animation:"shimmer 4s linear infinite",border:"1px solid rgba(192,144,255,0.5)",color:"white",fontFamily:"Cinzel,serif",letterSpacing:1.5,cursor:"pointer",fontWeight:700,boxShadow:"0 0 24px rgba(139,47,201,0.5),0 0 48px rgba(139,47,201,0.2)"}}>
+                  🔮 Unlock Deeper Connection — $3.99
+                </button>
               </div>
             )}
+
+            <button onClick={()=>handleLeave(onBack)}
+              style={{width:"100%",padding:"12px",fontSize:14,borderRadius:9,background:"rgba(148,90,210,0.18)",border:"1px solid rgba(148,90,210,0.6)",color:"#c090ff",fontFamily:"Cinzel,serif",letterSpacing:1,cursor:"pointer",marginBottom:8}}>
+              🔄 Begin Another Reading
+            </button>
+
+            <Footer/>
           </div>
+        )}
 
-          <div style={{textAlign:"center",marginBottom:16}}>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:9,color:gold,letterSpacing:3,textTransform:"uppercase",marginBottom:4}}>Date</div>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:12,color:cream}}>{dateStr}</div>
+        {/* ── DEEP CONNECTION TAB ── */}
+        {activeResultTab==="deep"&&(
+          <div style={{animation:"fadeIn 0.3s ease both"}}>
+
+            {/* Names header */}
+            {(()=>{
+              const getSign=(dob)=>{if(!dob)return null;try{const z=getZodiac(dob);return z?{name:z.sign,emoji:z.emoji}:null;}catch{return null;}};
+              const n1=nameDisplayOrder==="partnerFirst"?partnerName:userName;
+              const n2=nameDisplayOrder==="partnerFirst"?userName:partnerName;
+              const d1=nameDisplayOrder==="partnerFirst"?partnerBirthDate:birthDate;
+              const d2=nameDisplayOrder==="partnerFirst"?birthDate:partnerBirthDate;
+              const z1=getSign(d1); const z2=getSign(d2);
+              return(
+                <div style={{textAlign:"center",marginBottom:24}}>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:"clamp(20px,5vw,28px)",fontWeight:700,color:gold,letterSpacing:3,marginBottom:10}}>
+                    {n1} <span style={{color:"rgba(201,168,76,0.5)",fontSize:"0.6em"}}>&</span> {n2}
+                  </div>
+                  {/* Star signs centred */}
+                  <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:16,marginBottom:12}}>
+                    {z1&&<div style={{fontFamily:"Cinzel,serif",fontSize:14,color:gold,letterSpacing:1}}>{z1.emoji} {z1.name}</div>}
+                    <div style={{color:"rgba(201,168,76,0.3)",fontSize:14}}>✦</div>
+                    {z2&&<div style={{fontFamily:"Cinzel,serif",fontSize:14,color:gold,letterSpacing:1}}>{z2.emoji} {z2.name}</div>}
+                  </div>
+                  {/* Headline — shows placeholder before payment, real title after */}
+                  <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:16,color:gold,letterSpacing:1.5,marginBottom:6}}>
+                    ✦ {pdfNarrative?.headline || "A Reading by Madame Zafira"} ✦
+                  </div>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:14,color:gold,letterSpacing:1.5}}>{new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div>
+                </div>
+              );
+            })()}
+
+            {/* Section renderer helper */}
+            {(()=>{
+              const Section=({icon,title,color,field,narrative})=>(
+                <div style={{background:"#100c1a",border:`1px solid #2e1f40`,borderRadius:12,padding:"13px",marginBottom:8,borderLeft:`3px solid ${color}`}}>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:15,color,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6,fontWeight:700}}>{icon} {title}</div>
+                  {narrative?(
+                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:cream,margin:0,lineHeight:1.85}}>{narrative[field]}</p>
+                  ):(
+                    <div style={{filter:"blur(5px)",userSelect:"none",pointerEvents:"none"}}>
+                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:cream,margin:0,lineHeight:1.85}}>The stars hold many secrets for the two of you — pay to unlock the full reading and discover what Madame Zafira sees in the alignment of your souls…</p>
+                    </div>
+                  )}
+                </div>
+              );
+              return(
+                <>
+                  <Section icon="💫" title="Celestial Compatibility"   color={gold}       field="celestialCompatibility"  narrative={pdfNarrative}/>
+                  <Section icon="💗" title="The Language of Love"      color={rose}       field="languageOfLove"          narrative={pdfNarrative}/>
+                  <Section icon="🌊" title="How You Found Each Other"  color="#2a8a7a"    field="howYouFoundEachOther"    narrative={pdfNarrative}/>
+                  <Section icon="⚡" title="The Tension Between You"   color="#6070d8"    field="tensionBetweenYou"       narrative={pdfNarrative}/>
+                  <Section icon="🌟" title="Your Path Forward"         color={gold}       field="pathForward"             narrative={pdfNarrative}/>
+                  <div style={{background:"linear-gradient(135deg,rgba(80,30,120,0.3),rgba(30,10,60,0.5))",border:"1px solid rgba(192,144,255,0.3)",borderRadius:12,padding:"13px",marginBottom:8,borderLeft:"3px solid #c090ff"}}>
+                    <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:"#c090ff",letterSpacing:1.5,textTransform:"uppercase",marginBottom:6,fontWeight:700}}>✨ A Message From the Stars</div>
+                    {pdfNarrative?(
+                      <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:19,color:cream,margin:0,lineHeight:1.85}}>{pdfNarrative.messageFromTheStars}</p>
+                    ):(
+                      <div style={{filter:"blur(5px)",userSelect:"none",pointerEvents:"none"}}>
+                        <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:17,color:cream,margin:0,lineHeight:1.85}}>The cosmos has a final word for the two of you — something neither of you has dared to say out loud yet…</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* PDF upsell / generating / download */}
+            {!pdfPaid ? (
+              <div style={{background:"linear-gradient(135deg,rgba(80,30,120,0.25),rgba(30,10,60,0.4))",border:"1px solid rgba(148,90,210,0.5)",borderRadius:14,padding:"20px 18px",marginBottom:12,marginTop:8}}>
+                <div style={{textAlign:"center",marginBottom:14}}>
+                  <h3 style={{fontFamily:"Cinzel,serif",fontSize:16,color:"#c090ff",margin:"0 0 8px",letterSpacing:1,fontWeight:700}}>Unlock Your Deeper Connection Reading</h3>
+                  <p style={{fontFamily:"Crimson Text,serif",fontSize:15,color:cream,margin:"0 0 12px",lineHeight:1.7}}>
+                    Madame Zafira will write a full personalised reading — weaving your birth signs, palm lines, and the story of your connection into intimate cosmic truth.
+                  </p>
+                  <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:16,textAlign:"left"}}>
+                    {["Real astrology — your signs, elements & love languages","The honest truth about your challenge, turned to wisdom","What the cosmos says your next chapter holds","A message from the stars written only for you two"].map(f=>(
+                      <div key={f} style={{display:"flex",alignItems:"flex-start",gap:8,fontFamily:"Crimson Text,serif",fontSize:14,color:cream}}>
+                        <span style={{color:gold,flexShrink:0,marginTop:2}}>✦</span>{f}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={onPDFPayment}
+                  style={{width:"100%",padding:"14px",fontSize:15,borderRadius:11,background:"linear-gradient(135deg,#3b0a6e,#8b2fc9,#b0405a,#3b0a6e)",backgroundSize:"300%",animation:"shimmer 4s linear infinite",border:"1px solid rgba(192,144,255,0.5)",color:"white",fontFamily:"Cinzel,serif",letterSpacing:1.5,cursor:"pointer",fontWeight:700,boxShadow:"0 0 24px rgba(139,47,201,0.5),0 0 48px rgba(139,47,201,0.2)"}}>
+                  🔮 Unlock Deeper Connection — $3.99
+                </button>
+              </div>
+            ) : pdfGenerating ? (
+              <div style={{background:"rgba(80,30,120,0.2)",border:"1px solid rgba(148,90,210,0.4)",borderRadius:14,padding:"24px",marginBottom:12,textAlign:"center"}}>
+                <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:12}}>
+                  {[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:"#c090ff",opacity:0.4,animation:`auraPulse 1.2s ease-in-out ${i*0.4}s infinite`}}/>)}
+                </div>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#c090ff",letterSpacing:2,textTransform:"uppercase",marginBottom:6}}>Madame Zafira is writing your reading…</div>
+                <div style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:14,color:"#a080b0"}}>The cosmos cannot be rushed.</div>
+              </div>
+            ) : pdfNarrative ? (
+              <>
+                <p style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#e05555",textAlign:"center",margin:"0 0 10px",lineHeight:1.6,fontWeight:600,letterSpacing:0.5}}>
+                  ⚠️ Download your PDF now — once you leave this page it cannot be recovered.
+                </p>
+                <button
+                  onClick={async()=>{
+                    try {
+                      const { generatePartnerCompatibilityPDF } = await lazyImportPDFGenerators();
+                      await generatePartnerCompatibilityPDF(reading, name1, name2, score, null, pdfNarrative, soulmateAnswers, soulmateJustCurious);
+                      setDeepPDFDownloaded(true);
+                    } catch(e) { console.error(e); }
+                  }}
+                  style={{width:"100%",padding:"14px",fontSize:15,borderRadius:11,background:deepPDFDownloaded?"#1a5c1a":"linear-gradient(135deg,#3b0a6e,#8b2fc9)",border:deepPDFDownloaded?"1px solid #2ecc2e":"1px solid rgba(192,144,255,0.4)",color:"white",fontFamily:"Cinzel,serif",letterSpacing:1.5,cursor:"pointer",fontWeight:700,marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:10,boxShadow:deepPDFDownloaded?"none":"0 0 20px rgba(139,47,201,0.4)"}}>
+                  <span style={{fontSize:20}}>📜</span> {deepPDFDownloaded ? "✓ PDF Downloaded" : "Download Your Connection PDF"}
+                </button>
+              </>
+            ) : null}
+
+            <button onClick={()=>{
+                if(pdfNarrative && !deepPDFDownloaded){
+                  setShowLeaveWarning(true);
+                  setPendingLeave(()=>()=>setActiveResultTab("soulmate"));
+                } else {
+                  setActiveResultTab("soulmate");
+                }
+              }}
+              style={{width:"100%",padding:"12px",fontSize:14,borderRadius:9,background:"rgba(148,90,210,0.18)",border:"1px solid rgba(148,90,210,0.6)",color:"#c090ff",fontFamily:"Cinzel,serif",letterSpacing:1,cursor:"pointer",marginBottom:8}}>
+              ← Back to Soulmate Connection
+            </button>
+
+            <Footer/>
           </div>
-
-          <div style={{textAlign:"center",marginBottom:4}}>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:52,fontWeight:700,color:rose,lineHeight:1}}>{score}%</div>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:10,color:gold,letterSpacing:3,textTransform:"uppercase",marginTop:4}}>Harmony Score</div>
-          </div>
-
-          <div style={{display:"flex",alignItems:"center",gap:8,margin:"14px 0"}}>
-            <div style={{flex:1,height:1,background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.3))"}}/>
-            <span style={{color:gold,fontSize:10}}>&#x2726;</span>
-            <div style={{flex:1,height:1,background:"linear-gradient(90deg,rgba(201,168,76,0.3),transparent)"}}/>
-          </div>
-
-          <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:16,color:cream,margin:"0 0 20px",lineHeight:1.75,textAlign:"center"}}>
-            "{insight}"
-          </p>
-
-          <div style={{textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            <span style={{fontSize:16}}>&#x1F52E;</span>
-            <span style={{fontFamily:"Cinzel,serif",fontSize:9,color:"#c9a84c",letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>MYSTICFORTUNES.AI</span>
-          </div>
-
-          <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"linear-gradient(90deg,transparent,#c9a84c,transparent)"}}/>
-        </div>
-
-        <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:18,color:"#a080b0",textAlign:"center",lineHeight:1.7,margin:"0 0 20px",padding:"0 8px",fontWeight:500,opacity:1}}>
-          Your cosmic alignment shifts with each lunar cycle. Return in {nextMonth} as new celestial patterns emerge — the tides may reveal a deeper dimension of your connection.
-        </p>
-
-        <button onClick={shareConnection} disabled={capturing||savingPage||shared}
-          style={{width:"100%",padding:"16px",fontSize:15,borderRadius:12,background:shared?"#1a6b4a":capturing?"#5c3a50":"linear-gradient(135deg,#c9a84c,#9d7d2e)",border:"none",color:shared?"white":"#080510",fontFamily:"Cinzel,serif",letterSpacing:1.5,cursor:capturing||shared?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:12,opacity:1,transition:"all 0.3s",fontWeight:600}}>
-          <span style={{fontSize:20}}>💾</span>
-          {shared ? "✓ Share Card Saved" : capturing ? "✦ Saving..." : "💾 Save Share Card"}
-        </button>
-
-        <p style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#e05555",textAlign:"center",margin:"0 0 16px",lineHeight:1.6,fontWeight:600,letterSpacing:0.5}}>
-          ⚠️ Save your share card now — once you leave this page your connection reading will be gone forever and cannot be recovered.
-        </p>
+        )}
 
       </div>
     </div>
@@ -2307,10 +2557,94 @@ function PartnerCompatibilityResult({ reading, userName, partnerName, nameDispla
 
 export default function MysticFortunes() {
   const [phase,setPhase]=useState("intro");
-  const [showBlogDropdown,setShowBlogDropdown]=useState(false);
+
+  const [showNatalScreen,setShowNatalScreen]=useState(false);
+  const [birthPlace,setBirthPlace]=useState("");
+  const [birthPlaceData,setBirthPlaceData]=useState(null);
+  const [birthTime,setBirthTime]=useState(null);
+  const [birthTimeUnknown,setBirthTimeUnknown]=useState(false);
+
+  const [uploadMode,setUploadMode]=useState(false);
+  const [partnerUploadMode,setPartnerUploadMode]=useState(false);
+  const [showDevGate,setShowDevGate]=useState(false);
+
+  // ── DEV SHORTCUT: Shift+G shows browser gate page ────────────────────────
+  // ── DEV SHORTCUT: Shift+F jumps straight to Today's Fortune result ────────
+  // Remove before production
+  useEffect(()=>{
+    const handler=(e)=>{
+      if(e.shiftKey && e.key==='G') setShowDevGate(v=>!v);
+      if(e.shiftKey && e.key==='S'){
+        setUserName('Test User');
+        setPartnerName('Test Partner');
+        setBirthDate({day:1,month:6,year:1990});
+        setPartnerBirthDate({day:15,month:3,year:1992});
+        setJourneyMode('soulmate');
+        setPartnerPhase('questions');
+      }
+      if(e.shiftKey && e.key==='D'){
+        // Jump straight to Deeper Connection page with mock paid narrative
+        const devDob={day:1,month:6,year:1990};
+        const devPDob={day:15,month:3,year:1992};
+        setUserName('Caine'); setPartnerName('Sarah');
+        setBirthDate(devDob); setPartnerBirthDate(devPDob);
+        setNameDisplayOrder('userFirst');
+        const mockCompat=generatePartnerCompatibility('Caine',devDob,'Sarah',devPDob);
+        setPartnerReadingResult(mockCompat);
+        setPartnerPaid(true); setPartnerPDFPaid(true);
+        setSoulmateAnswers({q1:'We were brought together by chance',q2:'One to two years',q3:'Their warmth and heart',q4:'Nothing — we are aligned'});
+        setSoulmateJustCurious(false);
+        setSoulmateNarrative({
+          headline:'Written in Stardust',
+          celestialCompatibility:'Gemini and Pisces meet where the mind dissolves into the heart. Caine\'s airy duality draws Sarah\'s watery depth upward into curiosity, while Sarah\'s Neptune-ruled imagination softens the restless edges of Caine\'s Mercurial nature. The tension here is not conflict — it is creative friction, the kind that makes great art and lasting love. What each needs the other carries in abundance.',
+          languageOfLove:'Caine, as a Gemini, loves through words, ideas, and presence — showing up in conversation, in wit, in the unexpected message that arrives at exactly the right moment. Sarah\'s Piscean love language is feeling — she needs to sense that she is seen beneath the surface, not just delighted. Where Caine may mistake lightness for connection, Sarah may mistake silence for distance. Learning each other\'s dialect is the whole of the work.',
+          howYouFoundEachOther:'Chance is rarely what it appears. The universe does not operate on coincidence — it operates on readiness. When Caine and Sarah found each other, both had quietly arrived at a threshold, though neither had announced it. The meeting was written long before either of them arrived at the place that made it possible.',
+          tensionBetweenYou:'The alignment between them is not the absence of challenge — it is the presence of trust. Where friction has arisen, it has been the friction of two people learning to want the same things in different languages. This is not a flaw in the connection. It is the method by which the connection deepens.',
+          pathForward:'The chapter ahead calls for both of them to choose the connection deliberately — not because it is easy, but because it is true. What they nurture in the quiet between the extraordinary moments is what will outlast everything else. The stars do not promise easy. They promise worth it.',
+          messageFromTheStars:'Caine and Sarah — the cosmos placed you in the same moment not to complete each other, but to remind each other of what you already are. There is a rare current between you that most people spend their whole lives searching for. Do not take it for granted. Do not mistake its quietness for ordinary. What you have is not ordinary.',
+        });
+        setJourneyMode('soulmate');
+        setPartnerPhase('result');
+        setPhase('result');
+        const devSeed=(Date.now()&0xFFFFFFFF)>>>0;
+        setReading(generateFortune(devSeed,'Caine',devDob));
+        setPalmImage('/madame-zafira-portrait.webp');
+      }
+      if(e.shiftKey && e.key==='F'){
+        const devSeed=(Date.now()&0xFFFFFFFF)>>>0;
+        const devName='Test User';
+        const devDob={day:1,month:6,year:1990};
+        setUserName(devName);
+        setReading(generateFortune(devSeed,devName,devDob));
+        setPalmImage('/madame-zafira-portrait.webp');
+        setJourneyMode('fortune');
+        setActiveTab('extras');
+        setPhase('result');
+      }
+    };
+    window.addEventListener('keydown',handler);
+    return ()=>window.removeEventListener('keydown',handler);
+  },[]);
+  // ─────────────────────────────────────────────────────────────────────────
+  // Check for startCapture query parameter from InAppBrowserGate button
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('startCapture') === 'true') {
+      setPhase('capture');
+      // Clean up the URL so it doesn't show the parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+  const [showNavDrawer,setShowNavDrawer]=useState(false);
   const [palmImage,setPalmImage]=useState(null);
   const [reading,setReading]=useState(null);
   const [partnerPaid,setPartnerPaid]=useState(false);
+  const [partnerPDFPaid,setPartnerPDFPaid]=useState(false);
+  const [soulmateAnswers,setSoulmateAnswers]=useState(null);
+  const [soulmateJustCurious,setSoulmateJustCurious]=useState(false);
+  const [soulmateNarrative,setSoulmateNarrative]=useState(null);
+  const [soulmateNarrativeGenerating,setSoulmateNarrativeGenerating]=useState(false);
   const [fullPaid,setFullPaid]=useState(false);
   const [showFullLeaveWarning,setShowFullLeaveWarning]=useState(false);
   const [pendingFullLeave,setPendingFullLeave]=useState(null);
@@ -2326,10 +2660,12 @@ export default function MysticFortunes() {
   const [toast,setToast]=useState("");
   const [mood,setMood]=useState("neutral");
   const [activeTab,setActiveTab]=useState("extras");
+  const [journeyMode,setJourneyMode]=useState("fortune"); // "fortune" | "soulmate"
   const [palmError,setPalmError]=useState(false);
   const [palmLandmarks,setPalmLandmarks]=useState(null);
   const [partnerPalmLandmarks,setPartnerPalmLandmarks]=useState(null);
   const [showFullscreenShareCard,setShowFullscreenShareCard]=useState(false);
+  const [fortuneShareSaved,setFortuneShareSaved]=useState(false);
   const fileRef=useRef(),videoRef=useRef(),canvasRef=useRef(),streamRef=useRef(null),videoRef2=useRef(null);
   const partnerVideoRef=useRef(),partnerCanvasRef=useRef(),partnerStreamRef=useRef(null);
   const [muted,setMuted]=useState(true);
@@ -2393,6 +2729,14 @@ export default function MysticFortunes() {
     }
   }, [showDesktopOverlay, handleKeyDown]);
 
+  // Check if we should open NavDrawer when returning from blog archive
+  useEffect(() => {
+    if (window.sessionStorage.getItem('openNavDrawerOnLoad') === 'true') {
+      setShowNavDrawer(true);
+      window.sessionStorage.removeItem('openNavDrawerOnLoad');
+    }
+  }, []);
+
   // Music button only visible after user has moved past the intro screen
   // This works in both preview and real browser
 
@@ -2406,73 +2750,7 @@ export default function MysticFortunes() {
     const dayOfYear = Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/86400000);
     const dailySeed = (generateSeed(userName,birthDate)^(dayOfYear*2654435761))>>>0;
     const dRng = seededRandom(dailySeed);
-    const DF = [
-      `The universe conspires in your favour today, ${n} — but only if you take the first step. Something you have been waiting for permission to begin needs no permission but your own. Trust that the timing is perfect, even when it feels uncertain.`,
-      `Today carries an unusual momentum, ${n}. The action you have been postponing is precisely the one the universe is waiting for you to take. Your hesitation has served its purpose — now let it go.`,
-      `A door that has been closed for some time is looser on its hinges today, ${n}. A gentle push is all it requires. What you thought was locked away may be more accessible than you believe.`,
-      `The stars have cleared a path for you today, ${n}. The obstacle you were preparing to navigate has moved. Walk forward without waiting for confirmation. The universe has already given it.`,
-      `Today is not a day for planning, ${n}. It is a day for doing the thing the plan has been delaying. Overthinking is the last refuge of fear — move instead.`,
-      `Something small you do today, ${n}, will have a disproportionately large effect. The universe is amplifying your signal. Pay attention to the ripples you create.`,
-      `The hesitation you have been feeling is not intuition warning you away, ${n}. It is habit. Today, act before the habit speaks. Your intuition lives deeper than fear.`,
-      `Today brings a narrow window, ${n}. Move when you feel the pull, not after you have reasoned yourself out of it. Windows close quickly once you stop moving toward them.`,
-      `The energy today favours beginnings, ${n}. Whatever you start carries further than what you start later. The momentum you build now will carry you through doubt.`,
-      `A conversation you have been avoiding will be easier today than tomorrow, ${n}. The longer you wait, the heavier it becomes. The lightness you seek lives on the other side of speaking.`,
-      `Pay attention to what you notice first today, ${n}. The universe leaves its most important messages where your eyes land before your mind filters. Your first instinct is rarely wrong.`,
-      `Something you have been looking at without seeing will become clear today, ${n}. The understanding arrives on its own schedule. Clarity is coming whether you force it or not.`,
-      `The person you encounter unexpectedly today, ${n}, is not a coincidence. Give them more than the attention you would usually spare. Synchronicity rewards generosity.`,
-      `Today asks you to listen more than you speak, ${n}. The information you need is already in the room. What you hear will change what you thought you knew.`,
-      `There is a detail in your current situation that you have been overlooking, ${n}. Today it will make itself obvious. Sometimes the answer hides in plain sight.`,
-      `Someone in your life needs to hear something from you today, ${n} — not advice, just acknowledgement. Your presence is more powerful than you realize.`,
-      `Today brings an opportunity to repair something small before it becomes something large, ${n}. Small actions prevent future problems. Prevention is the gift you give yourself.`,
-      `The person you think least about today, ${n}, may be thinking most about you. A small gesture will mean more than you expect. You underestimate your impact on others.`,
-      `Today ask you to be the one who reaches out first, ${n}. The pride keeping you waiting is costing more than the reaching would. Vulnerability is the fastest path to what you want.`,
-      `The version of you that is afraid and the version that is ready are both telling the truth today, ${n}. Let the ready one go first. Fear doesn't need permission to speak — neither should your courage.`,
-      `Today is a good day to forgive yourself for something old, ${n}. The weight of it has been costing you more than the thing was worth. Self-forgiveness is the unlock you have been searching for.`,
-      `Something you have been telling yourself as fact is actually a story, ${n}. Today you will have the chance to notice the difference. Stories can be rewritten — yours is not finished.`,
-      `Today brings the quiet that precedes change, ${n}. Resist the urge to fill it. What is coming needs the space to arrive. Silence is not empty — it is preparation.`,
-      `An idea that has been forming below the surface will break through today, ${n}. Have something nearby to catch it. Inspiration comes to those who are ready to receive it.`,
-      `The creative impulse you have been explaining away, ${n}, is not a distraction from your real work. It is your real work. What calls to you is calling because it is meant for you.`,
-      `What appears to be stagnation today, ${n}, is actually consolidation. The roots grow before the new branch does. Invisible growth is still growth.`,
-      `The news you have been waiting for arrives with a twist, ${n}. What comes is not quite what you expected, but it is better. Stay open to surprise.`,
-      `Today asks you to stop explaining yourself to people who have already decided, ${n}. Your words cannot convince someone determined not to listen. Save your breath for believers.`,
-      `A moment of joy is trying to reach you today — let it, ${n}. You do not have to earn happiness. It is your birthright to feel good.`,
-      `The legacy you are building is visible in small ways you are not yet aware of, ${n}. Your impact spreads further than you know. Keep going.`,
-      `Today reminds you that the person you think you need to become already exists inside you, ${n}. You are not becoming someone new — you are remembering who you have always been.`,
-      `Something you have been protecting is safe to release, ${n}. Fear has been guarding it, but it no longer needs protection. Let it flow.`,
-      `The question that will change everything is sitting on the tip of your tongue, ${n}. Ask it. The answer is waiting.`,
-      `Today brings a shift in how you see yourself — pay attention to it, ${n}. You are beginning to believe something that will change everything ahead.`,
-      `A part of you that you have hidden is ready to be seen, ${n}. The world is waiting for your authentic self, not your polished version. Show up fully.`,
-      `The time you spent in darkness was teaching you how to recognize the light, ${n}. Nothing was wasted. Everything was necessary.`,
-      `Today asks you to act as if success is already yours, ${n}. Confidence is magnetic. The energy you emit becomes your reality.`,
-      `Something you thought would break you only cracked you open, ${n}. Broken things let the light in. You are not shattered — you are illuminated.`,
-      `The answer you have been seeking is sitting in a feeling, not a thought, ${n}. Stop thinking and start feeling. Your intuition knows what your mind is still learning.`,
-      `Today brings evidence that the universe is conspiring in your favour, ${n}. Look for the synchronicities. The signs are everywhere.`,
-      `A promise you made to yourself is ready to be kept, ${n}. Today is the day you finally follow through. Show yourself you can be trusted.`,
-      `The person who hurt you was only capable of what they were capable of, ${n}. Their limitations are not your reflection. Release the weight of their shame.`,
-      `Today reminds you that seasons change and so do you, ${n}. What was true in winter is not true in spring. You are not stuck — you are growing.`,
-      `Something is conspiring to push you toward your calling, ${n}. Discomfort is the universe's way of saying you are ready for more. Move into it.`,
-      `The grace you have extended to others is being extended back to you now, ${n}. What you have sown, you are reaping. Kindness always returns.`,
-      `Today asks you to remember that you have always known what to do, ${n}. Trust yourself. Your wisdom is inside you, not outside you.`,
-      `A friendship is deepening in ways you have not yet recognized, ${n}. Pay attention to who stays. They are showing you who your people are.`,
-      `The breakthrough you have been working toward is closer than you think, ${n}. One more step might be all it takes. Do not stop now.`,
-      `Today brings a reminder that your value does not fluctuate with your productivity, ${n}. You are worthy on your worst day as much as your best. Rest when you need to.`,
-      `Something you thought was gone forever is returning, ${n}. Sometimes what leaves comes back changed. Be ready to meet it anew.`,
-      `The power you give others over your mood is power you can reclaim, ${n}. Your peace is not dependent on their actions. Take it back.`,
-      `Today reminds you that the smallest act of love can change a life, ${n}. Do not underestimate your capacity to matter. Your kindness ripples further than you know.`,
-      `The version of yourself that shows up today is exactly who needs to be here, ${n}. Stop trying to be more and just be fully who you are. Authenticity is enough.`,
-      `Something that felt impossible yesterday can feel manageable today, ${n}. Perspective shifts happen overnight. Tomorrow will feel different again. Keep moving.`,
-      `A door you thought was closed forever has a new handle, ${n}. Sometimes the universe gives us second chances in unexpected forms. Stay open.`,
-      `Today asks you to remember that your wounds became your wisdom, ${n}. What you survived taught you what no classroom ever could. Your scars are your credentials.`,
-      `The person who needs to hear your story most is struggling in silence, ${n}. Speak your truth today. Someone needs to know they are not alone.`,
-      `Today brings a shift in who you are becoming, ${n}. You cannot stay the same person and reach for new things. Transformation is in motion.`,
-      `Something you thought was a limitation is actually a protection, ${n}. The universe builds walls around what it is not yet time for you to access. Trust the timing.`,
-      `The fear you feel is not a stop sign — it is a compass, ${n}. It is pointing you toward something that matters. Move toward it.`,
-      `Today reminds you that rest is not earned — it is essential, ${n}. You do not have to prove your worth by being productive. Your existence alone is enough.`,
-      `A conversation you have been avoiding will open more than you expect, ${n}. Sometimes the breakthrough comes from the dialogue you resist most. Be brave.`,
-      `The truth you know in your bones is truer than any doubt in your mind, ${n}. Gut feelings are data. Trust what your body is telling you.`,
-      `Today asks you to plant a seed for a garden you may not see bloom, ${n}. Legacy is built in moments that feel insignificant. Your gifts compound over time.`,
-      `The abundance you seek is responding to the energy you emit, ${n}. Scarcity thinking repels what you want. Today, think like you already have it all.`,
-    ];
+    const DF = getDailyFortunes(n);
     return DF[Math.floor(dRng()*DF.length)];
   }, [userName, birthDate]);
 
@@ -2486,21 +2764,11 @@ export default function MysticFortunes() {
     setCameraOn(true);
   };
 
-  // Auto-open camera whenever capture phase is entered
-  useEffect(()=>{
-    if(phase==="capture" && !cameraOn) {
-      setCameraOn(true);
-    }
-  },[phase]);
+  // Camera is opened from PalmScanChoice interstitial, not auto-opened
 
   const [debugMsg, setDebugMsg] = useState("");
 
-  // Auto-open partner camera whenever partner capture phase is entered
-  useEffect(()=>{
-    if(partnerPhase==="capture" && !partnerCameraOn) {
-      setPartnerCameraOn(true);
-    }
-  },[partnerPhase]);
+  // Partner camera also opened from PalmScanChoice interstitial
 
   // Debug: log what localStorage has on mount
   useEffect(() => {
@@ -2539,7 +2807,6 @@ export default function MysticFortunes() {
 
         } else if (productType === 'partner_compatibility') {
           // Restore app state after free coupon redirect
-          // userName is already in state via useState lazy initialiser — only override if localStorage has a value
           const savedUserName1 = localStorage.getItem('pendingUserName');
           if (savedUserName1) setUserName(savedUserName1);
           const effectiveName1 = savedUserName1 || userName;
@@ -2559,11 +2826,25 @@ export default function MysticFortunes() {
             const seed = generateSeed(effectiveName1, birthDate);
             setReading(generateFortune(seed, effectiveName1, birthDate));
           }
-          localStorage.removeItem('pendingReading'); // reading is large, remove it
+          // Restore soulmate answers and partner details
+          try { const sa = localStorage.getItem('pendingSoulmateAnswers'); if(sa) setSoulmateAnswers(JSON.parse(sa)); } catch(e) {}
+          try { const jc = localStorage.getItem('pendingSoulmateJustCurious'); if(jc) setSoulmateJustCurious(jc === 'true'); } catch(e) {}
+          try { const pn = localStorage.getItem('pendingPartnerName'); if(pn) setPartnerName(pn); } catch(e) {}
+          try { const pb = localStorage.getItem('pendingPartnerBirthDate'); if(pb) setPartnerBirthDate(JSON.parse(pb)); } catch(e) {}
+          // Regenerate the compat result
+          try {
+            const restoredDob1b = (() => { try { const s = localStorage.getItem('pendingBirthDate'); return s ? JSON.parse(s) : birthDate; } catch { return birthDate; } })();
+            const pDob = (() => { try { const s = localStorage.getItem('pendingPartnerBirthDate'); return s ? JSON.parse(s) : {day:1,month:1,year:1990}; } catch { return {day:1,month:1,year:1990}; } })();
+            const pName = localStorage.getItem('pendingPartnerName') || partnerName || "Your Partner";
+            const compat = generatePartnerCompatibility(effectiveName1, restoredDob1b, pName, pDob);
+            setPartnerReadingResult(compat);
+          } catch(e) {}
+          localStorage.removeItem('pendingReading');
           setPartnerPaid(true);
-          setPhase('result');
+          setPartnerPDFPaid(true);
+          setPartnerPhase('result');
+          setJourneyMode('soulmate');
           setActiveTab('reading');
-          setShowPartnerDetailsPage(true);
         }
         window.history.replaceState({}, document.title, window.location.pathname);
         return;
@@ -2601,9 +2882,6 @@ export default function MysticFortunes() {
             // PAID FEATURE: Enhance reading with Claude (triggered via useEffect when fullPaid=true)
             window.history.replaceState({}, document.title, window.location.pathname);
           } else if (data.productType === 'partner_compatibility') {
-            // Restore app state after Stripe redirect
-            // Always restore name first — outside try/catch so it can never be blocked
-            // userName is already in state via useState lazy initialiser — only override if localStorage has a value
             const savedUserName2 = localStorage.getItem('pendingUserName');
             if (savedUserName2) setUserName(savedUserName2);
             const effectiveName2 = savedUserName2 || userName;
@@ -2623,11 +2901,25 @@ export default function MysticFortunes() {
               const seed = generateSeed(effectiveName2, birthDate);
               setReading(generateFortune(seed, effectiveName2, birthDate));
             }
-            localStorage.removeItem('pendingReading'); // reading is large, remove it
+            // Restore soulmate answers and partner details
+            try { const sa = localStorage.getItem('pendingSoulmateAnswers'); if(sa) setSoulmateAnswers(JSON.parse(sa)); } catch(e) {}
+            try { const jc = localStorage.getItem('pendingSoulmateJustCurious'); if(jc) setSoulmateJustCurious(jc === 'true'); } catch(e) {}
+            try { const pn = localStorage.getItem('pendingPartnerName'); if(pn) setPartnerName(pn); } catch(e) {}
+            try { const pb = localStorage.getItem('pendingPartnerBirthDate'); if(pb) setPartnerBirthDate(JSON.parse(pb)); } catch(e) {}
+            // Regenerate the compat result
+            try {
+              const restoredDob2b = (() => { try { const s = localStorage.getItem('pendingBirthDate'); return s ? JSON.parse(s) : birthDate; } catch { return birthDate; } })();
+              const pDob2 = (() => { try { const s = localStorage.getItem('pendingPartnerBirthDate'); return s ? JSON.parse(s) : {day:1,month:1,year:1990}; } catch { return {day:1,month:1,year:1990}; } })();
+              const pName2 = localStorage.getItem('pendingPartnerName') || partnerName || "Your Partner";
+              const compat2 = generatePartnerCompatibility(effectiveName2, restoredDob2b, pName2, pDob2);
+              setPartnerReadingResult(compat2);
+            } catch(e) {}
+            localStorage.removeItem('pendingReading');
             setPartnerPaid(true);
-            setPhase('result');
+            setPartnerPDFPaid(true);
+            setPartnerPhase('result');
+            setJourneyMode('soulmate');
             setActiveTab('reading');
-            setShowPartnerDetailsPage(true);
             window.history.replaceState({}, document.title, window.location.pathname);
             return;
           }
@@ -2695,8 +2987,8 @@ export default function MysticFortunes() {
   };
 
   const stopCamera=()=>{
-    if(partnerPhase==="capture") setPartnerCameraOn(false);
-    else setCameraOn(false);
+    if(partnerPhase==="capture"){setPartnerCameraOn(false);setPartnerUploadMode(false);}
+    else{setCameraOn(false);setUploadMode(false);}
   };
   const capturePhoto=()=>{
     const v=videoRef.current,c=canvasRef.current;if(!v||!c)return;
@@ -2728,22 +3020,19 @@ export default function MysticFortunes() {
     clearTimeout(tapTimerRef.current);
     if (tapCountRef.current >= 5) {
       tapCountRef.current = 0;
-      // Ask for a real name so we can test name persistence through paywall
-      const inputName = window.prompt("DEV MODE — Enter your name to test paywall flow:", "Caine");
-      if (!inputName) return;
-      const devName = inputName.trim();
+      const devName = "Caine";
       const devDob  = {day:24, month:2, year:1975};
       const devSeed = (Date.now() & 0xFFFFFFFF) >>> 0;
-      const devFortune = generateFortune(devSeed, devName, devDob);
-      // Save to localStorage exactly as the real DetailsPage onSubmit does
-      try { localStorage.setItem('pendingUserName', devName); } catch(e) {}
-      try { localStorage.setItem('pendingBirthDate', JSON.stringify(devDob)); } catch(e) {}
       setUserName(devName);
       setBirthDate(devDob);
-      setReading({...FALLBACK,...devFortune});
-      setPalmImage(null);
-      setPhase("result");
-      setActiveTab("reading");
+      setReading(generateFortune(devSeed, devName, devDob));
+      setPalmImage('/madame-zafira-portrait.webp');
+      setPartnerPhase(null);
+      setPartnerReadingResult(null);
+      setShowPartnerDetailsPage(false);
+      setJourneyMode('fortune');
+      setActiveTab('extras');
+      setPhase('result');
     } else {
       tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 1500);
     }
@@ -2752,14 +3041,10 @@ export default function MysticFortunes() {
   // PAID FEATURE: When user pays for Full Revelation, enhance reading with Claude
   useEffect(() => {
     if (fullPaid && !subscribed && reading) {
-      console.log("🎯 Payment confirmed, triggering Claude enhancement...");
-      // Small timeout ensures state updates are flushed
-      const timer = setTimeout(() => {
-        enhanceReadingWithClaude();
-      }, 100);
-      return () => clearTimeout(timer);
+      console.log("🎯 Payment confirmed — showing natal info screen...");
+      setShowNatalScreen(true);
     }
-  }, [fullPaid]); // Only trigger when fullPaid changes to true
+  }, [fullPaid]);
 
   // Show custom loading message for Claude enhancement vs regular loading
   const loadingMessage = fullPaid ? "Unlocking deep insights…" : "Reading your ancient lines…";
@@ -2798,136 +3083,75 @@ export default function MysticFortunes() {
   };
 
   // PAID FEATURE: Enhance the algorithm reading with Claude's theatrical flair
-  const enhanceReadingWithClaude = async () => {
-    if (!reading) {
-      console.warn("Cannot enhance: missing reading");
-      return;
+  const enhanceReadingWithClaude = async (providedBirthPlace, providedBirthTime, providedBirthPlaceData) => {
+    if (!reading) { console.warn("Cannot enhance: missing reading"); return; }
+    const astro = buildAstroProfile(birthDate, providedBirthTime, providedBirthPlaceData);
+    let astroContext = "";
+    if (astro) {
+      const parts = [];
+      if (astro.sunSign)     parts.push(`Sun sign: ${astro.sunSign} (${astro.element} ${astro.modality}, ruled by ${astro.rulingPlanet})`);
+      if (astro.moonSign)    parts.push(`Moon sign: ${astro.moonSign}`);
+      if (astro.risingSign)  parts.push(`Rising sign: ${astro.risingSign}`);
+      if (astro.birthPlace)  parts.push(`Birth place: ${astro.birthPlace}`);
+      if (astro.birthTime && astro.birthTime !== "unknown") parts.push(`Birth time: ${astro.birthTime}`);
+      if (astro.lifePath)    parts.push(`Life path number: ${astro.lifePath}`);
+      if (astro.chineseZodiac) parts.push(`Chinese zodiac: ${astro.chineseZodiac}`);
+      astroContext = parts.join(" · ");
     }
-    
-    console.log("✨✨✨ CALLING CLAUDE TO ENHANCE FULL REVELATION ✨✨✨");
-    console.log("User:", userName);
-    console.log("Algorithm reading to enhance:", reading);
+    const hasAstro = astroContext.length > 0;
+    console.log("✨ CALLING CLAUDE — Full Revelation with astro:", astroContext || "none");
     setPhase("loading");
-    
     try {
-      const prompt = `You are Madame Zafira, a palm reader who speaks with quiet certainty and no hesitation.
+      const prompt = `You are Madame Zafira, a palm and celestial reader who speaks with quiet certainty and absolute authority. You blend palmistry with astrology and numerology into a seamless, personal reading.
 
-A seeker, ${userName}, has received an initial reading. Rewrite and enhance it to be more poetic, mystical, and personal — as if speaking directly to them with the authority of someone who has truly seen their palm.
-
-Keep the core meaning. Elevate the language. Make it resonate.
-
-Rules: Speak with absolute confidence. Use ${userName}'s name. Include one emotionally impactful statement. Include one specific 30-90 day prediction. Make connections between the different palm lines. Do not explain palm reading — deliver as undeniable truth.
-
-The reading to enhance:
+Seeker: ${userName}
+${hasAstro ? `Celestial profile: ${astroContext}` : ""}
+Palmistry reading to elevate:
 ${JSON.stringify(reading, null, 2)}
 
-Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":"${userName}, [2-3 sentences about what you see overall]","lifeLine":"[3-4 sentences about life path]","heartLine":"[3-4 sentences about emotional patterns]","headLine":"[3-4 sentences about intellectual patterns]","fateLine":"[3-4 sentences about direction]","fullReading":"[3-4 paragraphs weaving all lines together]","nearFuture":"[2-3 sentences about specific 30-90 day prediction]"}`;
+Your task: Rewrite and deepen this reading, weaving the palm lines together with the seeker's celestial profile. Make it feel cosmically specific — the particular intersection of THIS person's palm and stars.
 
-      
+${hasAstro ? `Weave in their ${astro?.sunSign||""} sun sign nature, their ${astro?.moonSign||""} moon's emotional undercurrent${astro?.risingSign?`, their ${astro.risingSign} rising's outward expression`:""}${astro?.lifePath?`, and their life path ${astro.lifePath} soul mission`:""}.${astro?.birthPlace?` Reference their birth place (${astro.birthPlace}) naturally if relevant.`:""}` : "Enhance with poetic mystical depth."}
+
+Rules: Speak as undeniable truth. Use ${userName}'s name at least twice. Every section must feel specific to them. Include one emotionally precise statement that lands like recognition. The fateLine must speak to long-term soul direction, distinct from the short-term nearFuture prediction.
+
+Respond ONLY with this JSON (no preamble, nothing else):
+{"greeting":"${userName}, [2-3 sentences weaving palm impression with celestial signature]","lifeLine":"[3-4 sentences — life path energy, stamina, reinvention, Chinese zodiac influence if relevant]","heartLine":"[3-4 sentences — emotional patterns, love nature, moon sign resonance]","headLine":"[3-4 sentences — mental style, intuition, ruling planet influence]","fateLine":"[3-4 sentences — soul-level destiny direction, life path number significance, what is being built over years not weeks]","fullReading":"[4 paragraphs separated by \n\n: 1.Overall cosmic portrait. 2.The central challenge written in both palm and stars. 3.What is approaching in their life. 4.The unique gift only they carry.]","nearFuture":"[2-3 sentences — specific 30-90 day celestial and palm prediction, distinct from fateLine]"}`;
+
       const res = await fetch("/api/claude", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1100,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "text", text: prompt }
-            ]
-          }]
+          max_tokens: 1500,
+          messages: [{ role: "user", content: [{ type: "text", text: prompt }] }]
         })
       });
-      
-      console.log("Claude API Response Status:", res.status);
-      
       const data = await res.json();
-      
-      if (!res.ok) {
-        console.error("Claude API returned error:", JSON.stringify(data, null, 2));
-        throw new Error(data.error || data.message || JSON.stringify(data));
-      }
-      
-      let text = data.content.map(i => i.text || "").join("");
-      text = text.replace(/```json|```/g, "").trim();
-      
-      console.log("Raw Claude response length:", text.length);
-      console.log("First 100 chars:", text.substring(0, 100));
-      console.log("Last 50 chars:", text.substring(Math.max(0, text.length - 50)));
-      
+      if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+      let text = data.content.map(i => i.text || "").join("").replace(/```json|```/g, "").trim();
       let claudeR;
-      try {
-        claudeR = JSON.parse(text);
-        console.log("✅ Parsed successfully on first try");
-      } catch(parseErr) {
-        console.warn("Direct JSON parse failed, attempting extraction...");
-        
-        const firstBrace = text.indexOf('{');
-        const lastBrace = text.lastIndexOf('}');
-        
-        console.log("First brace at:", firstBrace, "Last brace at:", lastBrace);
-        
-        let jsonStr = null;
-        
-        // Strategy 1: Use first { to last }
-        if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
-          jsonStr = text.substring(firstBrace, lastBrace + 1);
-          console.log("Using first { to last } extraction");
-        } 
-        // Strategy 2: If no closing brace, try first { to end and add closing brace
-        else if (firstBrace !== -1 && lastBrace === -1) {
-          console.warn("No closing brace found, response may be truncated");
-          jsonStr = text.substring(firstBrace) + '}';
-          console.log("Attempting to fix by adding closing brace");
-        }
-        // Strategy 3: Regex for any JSON-like structure
-        else {
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            jsonStr = jsonMatch[0];
-            console.log("Using regex extraction");
-          }
-        }
-        
-        if (!jsonStr) {
-          console.error("Cannot extract JSON from response");
-          console.error("First 500 chars:", text.substring(0, 500));
-          throw new Error("No JSON found in Claude response");
-        }
-        
-        try {
-          claudeR = JSON.parse(jsonStr);
-          console.log("✅ Successfully extracted and parsed JSON from response");
-        } catch(extractErr) {
-          console.error("Extracted JSON still invalid:", extractErr.message);
-          console.error("Extracted text length:", jsonStr.length);
-          console.error("Last 100 chars of extracted:", jsonStr.substring(Math.max(0, jsonStr.length - 100)));
-          throw new Error("Cannot parse extracted JSON: " + extractErr.message);
-        }
+      try { claudeR = JSON.parse(text); }
+      catch {
+        const fb = text.indexOf('{'), lb = text.lastIndexOf('}');
+        if (fb !== -1 && lb !== -1) claudeR = JSON.parse(text.substring(fb, lb+1));
+        else throw new Error("No JSON in Claude response");
       }
-      
-      console.log("✅ Claude response parsed successfully");
-      
-      // Merge Claude's enhanced version with algorithm's core attributes
       setReading({
-        ...claudeR,           // Claude's enhanced version (main content)
-        // Keep these algorithm attributes (mystical/deterministic):
-        soulSign: reading.soulSign,
-        luckyColor: reading.luckyColor,
+        ...claudeR,
+        soulSign:    reading.soulSign,
+        luckyColor:  reading.luckyColor,
         luckyNumber: reading.luckyNumber,
         personality: reading.personality,
-        gift: reading.gift,           // Algorithm's gift description
-        warning: reading.warning,     // Algorithm's warning
-        pastLife: reading.pastLife,   // Algorithm's past life
+        gift:        reading.gift,
+        warning:     reading.warning,
+        pastLife:    reading.pastLife,
+        astroProfile: astro,
       });
-      console.log("✅ CLAUDE ENHANCEMENT COMPLETE — Full Revelation enhanced!");
-      
+      console.log("✅ CLAUDE ENHANCEMENT COMPLETE");
     } catch(e) {
-      console.error("❌ CLAUDE ENHANCEMENT FAILED:", e.message || JSON.stringify(e));
-      console.error("Error details:", e.stack);
-      // Keep existing algorithm reading if Claude fails
+      console.error("❌ CLAUDE ENHANCEMENT FAILED:", e.message);
     }
-    
     setPhase("result");
   };
 
@@ -2946,25 +3170,241 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
   };
 
   const handlePartnerPayment = () => {
-    // Use localStorage for name/dob — survives cross-origin redirects reliably
     try { if (userName) localStorage.setItem('pendingUserName', userName); } catch(e) {}
     try { if (birthDate) localStorage.setItem('pendingBirthDate', JSON.stringify(birthDate)); } catch(e) {}
     try { if (reading) localStorage.setItem('pendingReading', JSON.stringify(reading)); } catch(e) {}
+    try { if (soulmateAnswers) localStorage.setItem('pendingSoulmateAnswers', JSON.stringify(soulmateAnswers)); } catch(e) {}
+    try { localStorage.setItem('pendingSoulmateJustCurious', String(soulmateJustCurious)); } catch(e) {}
+    try { if (partnerName) localStorage.setItem('pendingPartnerName', partnerName); } catch(e) {}
+    try { if (partnerBirthDate) localStorage.setItem('pendingPartnerBirthDate', JSON.stringify(partnerBirthDate)); } catch(e) {}
     setPaymentType('partner_compatibility');
     setShowPaymentModal(true);
   };
 
+  // ── Fallback soulmate narrative — used when Claude API fails ─────────────
+  const generateFallbackSoulmateNarrative = (answers, justCurious, uName, uSign, pName, pSign, uMeta, pMeta) => {
+    const connectionType = justCurious ? "connection" : "love";
+    const sameElement = uMeta?.element === pMeta?.element;
+    const elementNote = sameElement
+      ? `Both carry the ${uMeta?.element||"cosmic"} element — this gives their bond an instinctive recognition, a sense of being cut from the same celestial cloth.`
+      : `${uMeta?.element||"cosmic"} meets ${pMeta?.element||"cosmic"} — different in nature but complementary in purpose, each offering what the other cannot provide alone.`;
+
+    const meetingLines = {
+      "We were brought together by chance": "What the world calls chance, the stars call timing. Nothing about this meeting was accidental.",
+      "Through friends or family": "The people closest to them became the hands of fate, arranging what the cosmos had long intended.",
+      "We found each other online": "Even across distance and screen, the pull between them was undeniable — the universe finds its way.",
+      "Through work or study": "Shared purpose became the vessel for something far deeper than either anticipated.",
+      "We have known each other since childhood": "Their story began long before either understood what it would become — the roots of this bond run ancient.",
+      "It is a long story…": "Every twist in the road that brought them together was necessary. The path was never wrong, only winding.",
+    };
+
+    const challengeLines = {
+      "Distance or time apart": "Distance is not absence — it is the space in which longing deepens into certainty. What survives separation was always meant to last.",
+      "Trust and vulnerability": "Trust is not given — it is built, quietly, in the moments when one chooses to stay. They are building something real.",
+      "Communication and understanding": "The gap between two minds is not a flaw. It is the sacred work of learning another person's language — and they are learning.",
+      "Outside pressures": "What presses in from the outside cannot dissolve what has been forged between them. External forces reveal the strength of a bond, they do not determine it.",
+      "Nothing — we are aligned": "Their alignment is not luck — it is the result of two people who have done the inner work. They arrived ready for each other.",
+    };
+
+    const drawLines = {
+      "Their warmth and heart": "warmth that draws others in without effort — a quality written unmistakably in the open lines of their palm",
+      "Their mind and depth": "a depth of mind that rewards patience — the kind of intelligence that reveals itself slowly and stays forever",
+      "Their energy and spirit": "a vitality that shifts the atmosphere of any room — a spirit that reminds those around them what aliveness feels like",
+      "The mystery they carry": "a quality of mystery that cannot be manufactured — something ancient living just beneath the surface",
+      "The way they make me feel safe": "a steadying presence that asks nothing in return — the rarest of gifts in an uncertain world",
+    };
+
+    const q1Text = meetingLines[answers?.q1] || "The meeting was arranged long before either of them arrived.";
+    const q4Text = challengeLines[answers?.q4] || "Every challenge between them is an invitation to go deeper.";
+    const q3Text = drawLines[answers?.q3] || "a quality written in their very nature";
+
+    return {
+      headline: `${uSign} & ${pSign}`,
+      celestialCompatibility: `${uName} carries the signature of ${uSign} — ${uMeta?.element||""}, ${uMeta?.modality||""}, a soul shaped by ${uMeta?.element==="Fire"?"passion and instinct":uMeta?.element==="Earth"?"patience and loyalty":uMeta?.element==="Air"?"intellect and connection":"emotion and depth"}. ${pName} arrives as ${pSign} — ${pMeta?.element||""}, ${pMeta?.modality||""}, wired for ${pMeta?.element==="Fire"?"boldness and becoming":pMeta?.element==="Earth"?"endurance and devotion":pMeta?.element==="Air"?"curiosity and lightness":"feeling and transcendence"}. ${elementNote} The tension in their signs is not incompatibility — it is chemistry.`,
+      languageOfLove: `${uName}, as a ${uSign}, expresses ${connectionType} through ${uMeta?.modality==="Cardinal"?"initiation — showing up first, making the move, setting things in motion":uMeta?.modality==="Fixed"?"loyalty — staying when staying is hard, returning without being asked":uMeta?.modality==="Mutable"?"adaptability — meeting the other where they are, shifting to fit the shape of the moment":"presence and depth"}. ${pName}, shaped by ${pSign}, receives and gives ${connectionType} differently — through ${pMeta?.element==="Water"?"feeling and intuition, sensing what is never spoken":pMeta?.element==="Earth"?"acts of devotion, the small consistencies that accumulate into trust":pMeta?.element==="Fire"?"energy and presence, showing up fully and expecting the same":pMeta?.element==="Air"?"words and ideas, needing to be understood as much as loved":"deep attunement"}. Learning each other's dialect is not a problem to solve. It is the ongoing gift of this ${connectionType}.`,
+      howYouFoundEachOther: `${q1Text} When ${uName} and ${pName} first encountered one another, both were, in their own way, ready — though neither would have used that word. The universe does not send people to us before we can receive them. What arrived between them in those early moments was not coincidence. It was recognition.`,
+      tensionBetweenYou: `${q4Text} Between ${uName} and ${pName}, this is the place where the ${connectionType} does its real work. Not in the easy moments — in this one. The friction here is not a sign that something is wrong. It is the sign that something real is being forged.`,
+      pathForward: `The chapter ahead calls for both ${uName} and ${pName} to choose this ${connectionType} deliberately — not because it is effortless, but because it is true. What they have built, and what they are still building, deserves to be tended. The stars do not promise easy. They promise worth it. What is real between them already is.`,
+      messageFromTheStars: `${uName} and ${pName} — the cosmos placed you in the same moment not by accident but by readiness. You each carry ${q3Text}. Do not let the ordinary demands of life make you forget what is extraordinary about this. What the two of you have found is rarer than either of you knows. Tend it. Choose it. The stars are watching, and they are pleased.`,
+    };
+  };
+
+  // Generate soulmate narrative with Claude — only called after PDF payment confirmed
+  const generateSoulmateNarrative = async (answers, justCurious, uName, uDob, pName, pDob) => {
+    if (!answers || soulmateNarrativeGenerating) return;
+    setSoulmateNarrativeGenerating(true);
+    const ZODIAC_NAMES = ["Capricorn","Aquarius","Pisces","Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn"];
+    const getSign = (dob) => {
+      if (!dob) return "Unknown";
+      try { return ZODIAC_NAMES[getZodiac(dob)?.index] || "Unknown"; } catch { return "Unknown"; }
+    };
+    const userSign = getSign(uDob);
+    const partSign = getSign(pDob);
+    const ZODIAC_META_LOCAL = {
+      Aries:{element:"Fire",modality:"Cardinal"},Taurus:{element:"Earth",modality:"Fixed"},
+      Gemini:{element:"Air",modality:"Mutable"},Cancer:{element:"Water",modality:"Cardinal"},
+      Leo:{element:"Fire",modality:"Fixed"},Virgo:{element:"Earth",modality:"Mutable"},
+      Libra:{element:"Air",modality:"Cardinal"},Scorpio:{element:"Water",modality:"Fixed"},
+      Sagittarius:{element:"Fire",modality:"Mutable"},Capricorn:{element:"Earth",modality:"Cardinal"},
+      Aquarius:{element:"Air",modality:"Fixed"},Pisces:{element:"Water",modality:"Mutable"},
+    };
+    const userMeta  = ZODIAC_META_LOCAL[userSign]  || {};
+    const partMeta  = ZODIAC_META_LOCAL[partSign]   || {};
+    const sameElement = userMeta.element === partMeta.element;
+    const prompt = `You are Madame Zafira, a mystical palm and celestial reader. Write a deeply personal connection reading for two people.
+
+Connection type: ${connectionType}
+${uName}: ${userSign} (${userMeta.element||""} ${userMeta.modality||""})
+${pName}: ${partSign} (${partMeta.element||""} ${partMeta.modality||""})
+${sameElement ? `Both share the ${userMeta.element} element.` : `${userMeta.element} meets ${partMeta.element}.`}
+
+Their story:
+- How they met: ${answers.q1}
+- ${justCurious ? "Nature of connection" : "Time together"}: ${answers.q2}
+- ${justCurious ? "What they admire" : "What draws them"}: ${answers.q3}
+- ${justCurious ? "What they hope to discover" : "Greatest challenge"}: ${answers.q4}
+
+Write six sections. Speak as undeniable mystical truth. Use both names naturally. Make every section feel specific to these two people, not generic.
+
+Respond ONLY with valid JSON, no preamble, no markdown:
+{
+  "headline": "3-6 word poetic title for their connection (e.g. 'Written in Stardust', 'The Fire That Chose Itself')",
+  "celestialCompatibility": "3-4 sentences — their ${userSign} and ${partSign} interplay. Cover elements (${userMeta.element} + ${partMeta.element}), what each sign needs, where they complement, where they clash. Be specific and accurate — this is real astrology.",
+  "languageOfLove": "3-4 sentences — how ${uName} (${userSign}) loves versus how ${pName} (${partSign}) loves. What each one needs to feel seen. Where emotional misreads can happen and what to do about it.",
+  "howYouFoundEachOther": "3-4 sentences — '${answers.q1}' woven into cosmic language. Why the universe arranged this meeting. What each person was ready to receive when it happened.",
+  "tensionBetweenYou": "2-3 sentences — the honest truth about '${answers.q4}'. Speak to the friction with compassion. Turn the challenge into the thing that forges the connection deeper.",
+  "pathForward": "3-4 sentences — what the next chapter of this connection holds. What they must nurture. End with one sentence of profound, memorable truth they will want to keep.",
+  "messageFromTheStars": "One poetic paragraph (3-5 sentences) addressed to both of them together. Something specific, beautiful, and true that they will want to screenshot."
+}`;
+    try {
+      const res = await fetch("/api/claude", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2400,
+          messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Claude error");
+      let text = data.content.map(i => i.text || "").join("").replace(/```json|```/g, "").trim();
+      let parsed;
+      try { parsed = JSON.parse(text); }
+      catch {
+        const fb = text.indexOf("{"), lb = text.lastIndexOf("}");
+        if (fb !== -1 && lb !== -1) parsed = JSON.parse(text.substring(fb, lb + 1));
+        else throw new Error("No JSON in response");
+      }
+      setSoulmateNarrative(parsed);
+    } catch(e) {
+      console.error("❌ Soulmate narrative failed:", e.message);
+      // Fall back to algorithmically generated reading so paid user never sees nothing
+      setSoulmateNarrative(generateFallbackSoulmateNarrative(answers, justCurious, uName, userSign, pName, partSign, userMeta, partMeta));
+    }
+    setSoulmateNarrativeGenerating(false);
+  };
+
+  // Trigger narrative when PDF payment confirmed
+  useEffect(() => {
+    if (partnerPDFPaid && !soulmateNarrative && !soulmateNarrativeGenerating) {
+      const answers = soulmateAnswers || (() => { try { const s = localStorage.getItem('pendingSoulmateAnswers'); return s ? JSON.parse(s) : null; } catch { return null; } })();
+      const jc      = soulmateJustCurious || localStorage.getItem('pendingSoulmateJustCurious') === 'true';
+      const pName   = partnerName || localStorage.getItem('pendingPartnerName') || "Your Partner";
+      const pDob    = (() => { try { const s = localStorage.getItem('pendingPartnerBirthDate'); return s ? JSON.parse(s) : partnerBirthDate; } catch { return partnerBirthDate; } })();
+      generateSoulmateNarrative(answers, jc, userName, birthDate, pName, pDob);
+    }
+  }, [partnerPDFPaid]);
+
   return(
     <>
     {/* FreezeFrame validation happens silently in useEffect below */}
+    {showNatalScreen&&(
+      <NatalInfoScreen
+        onSubmit={({place,placeName,time})=>{
+          setBirthPlaceData(place);
+          setBirthPlace(placeName||"");
+          setBirthTime(time);
+          setBirthTimeUnknown(!time);
+          setShowNatalScreen(false);
+          enhanceReadingWithClaude(placeName,time,place);
+        }}
+        onSkip={()=>{
+          setShowNatalScreen(false);
+          enhanceReadingWithClaude(null,null,null);
+        }}
+      />
+    )}
+
+    {partnerPhase==="questions"&&(
+      <SoulmateQuestions
+        userName={userName}
+        partnerName={partnerName}
+        nameDisplayOrder={nameDisplayOrder}
+        onComplete={(answers, justCurious)=>{
+          setSoulmateAnswers(answers);
+          setSoulmateJustCurious(justCurious);
+          const compat = generatePartnerCompatibility(userName, birthDate, partnerName, partnerBirthDate);
+          setPartnerReadingResult(compat);
+          setPartnerPaid(true);
+          setJourneyMode("soulmate");
+          setPartnerPhase("loading");
+          setTimeout(()=>{setPartnerPhase("result");setActiveTab("soulmate");},3500);
+        }}
+        onBack={()=>{
+          setPartnerPhase("capture");
+          setPartnerPalmImage(null);
+          setPartnerPalmLandmarks(null);
+        }}
+      />
+    )}
+
+    {partnerPhase==="loading"&&(()=>{
+      const PartnerLoadingScreen=()=>{
+        const msgs=["Reading the lines of your connection…","The cosmos aligns your souls…","Madame Zafira sees the bond…","Your destiny is being revealed…"];
+        const [msgIdx,setMsgIdx]=React.useState(0);
+        React.useEffect(()=>{const t=setInterval(()=>setMsgIdx(i=>(i+1)%msgs.length),900);return()=>clearInterval(t);},[]);
+        return(
+          <div style={{position:"fixed",inset:0,zIndex:90,background:"#060412",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:28,animation:"fadeIn 0.6s ease both"}}>
+              <div style={{position:"relative",width:140,height:140}}>
+                <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"radial-gradient(circle at 40% 35%,#6b3fa0,#2a0d5e 60%,#0d0520)",boxShadow:"0 0 60px rgba(120,60,200,0.6),inset 0 0 40px rgba(180,120,255,0.15)",animation:"orbGlow 3s ease-in-out infinite"}}/>
+                <div style={{position:"absolute",top:"18%",left:"22%",width:"35%",height:"22%",borderRadius:"50%",background:"rgba(255,255,255,0.12)",filter:"blur(4px)",transform:"rotate(-20deg)"}}/>
+                <div style={{position:"absolute",inset:0,borderRadius:"50%",border:"2px solid rgba(201,168,76,0.4)",animation:"spin 8s linear infinite"}}/>
+                <div style={{position:"absolute",inset:6,borderRadius:"50%",border:"1px solid rgba(180,120,255,0.3)",animation:"spin 5s linear infinite reverse"}}/>
+              </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#c9a84c",letterSpacing:2.5,textTransform:"uppercase",animation:"auraPulse 2s ease-in-out infinite",marginBottom:8}}>{msgs[msgIdx]}</div>
+                <div style={{display:"flex",gap:6,justifyContent:"center"}}>{[0,1,2].map(i=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#c9a84c",opacity:0.3,animation:`auraPulse 1.2s ease-in-out ${i*0.4}s infinite`}}/>))}</div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+      return <PartnerLoadingScreen/>;
+    })()}
+
     {partnerPhase==="result"&&partnerReadingResult&&(
       <PartnerCompatibilityResult
         reading={partnerReadingResult}
         userName={userName}
         partnerName={partnerName}
         nameDisplayOrder={nameDisplayOrder}
-        onBack={()=>{setPartnerPhase(null);setPartnerReadingResult(null);setPartnerPaid(false);}}
+        onBack={()=>{
+          setPartnerPhase(null);setPartnerReadingResult(null);setPartnerPaid(false);setPartnerPDFPaid(false);setSoulmateNarrative(null);
+          setPhase("intro");setReading(null);setPalmImage(null);setShowPartnerDetailsPage(false);setUserName("");setJourneyMode("fortune");setActiveTab("extras");setSpeaking(false);
+          setShowNavDrawer(true);
+          try{localStorage.removeItem('pendingUserName');localStorage.removeItem('pendingBirthDate');localStorage.removeItem('pendingReading');}catch(e){}
+        }}
         setActiveTab={setActiveTab}
+        pdfPaid={partnerPDFPaid}
+        pdfGenerating={soulmateNarrativeGenerating}
+        pdfNarrative={soulmateNarrative}
+        onPDFPayment={handlePartnerPayment}
+        birthDate={birthDate}
+        partnerBirthDate={partnerBirthDate}
+        soulmateAnswers={soulmateAnswers}
+        soulmateJustCurious={soulmateJustCurious}
       />
     )}
     {(phase==="biometric" && palmImage && !palmError) || (partnerPhase==="biometric" && partnerPalmImage && !partnerPalmError)?(
@@ -2975,13 +3415,20 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
           palmLandmarks={partnerPhase==="biometric"?partnerPalmLandmarks:palmLandmarks}
           onComplete={()=>{
             if(partnerPhase==="biometric"){
-              const compat = generatePartnerCompatibility(userName, birthDate, partnerName, partnerBirthDate);
-              setPartnerReadingResult(compat);
-              setPartnerPhase("result");
-              setPartnerPaid(true);
-              setActiveTab("reading");
+              // Go to questions — reading generated after answers collected
+              setPartnerPhase("questions");
             }else{
-              getReading();
+              markScanComplete(); // ← user has now completed a real palm scan
+              if(journeyMode==="soulmate"){
+                // Soulmate flow — set placeholder reading, go straight to partner details
+                const _seed = generateSeed(userName, birthDate);
+                setReading(generateFortune(_seed, userName, birthDate));
+                setShowPartnerDetailsPage(true);
+                setActiveTab("reading");
+                setPhase("result");
+              } else {
+                getReading();
+              }
             }
           }}
         />
@@ -2992,6 +3439,7 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
       <style>{`
         @keyframes floatP{0%,100%{transform:translateY(0)}50%{transform:translateY(-26px) translateX(7px)}}
         @keyframes auraPulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.85;transform:scale(1.04)}}
+        @keyframes crystalPulse{0%,100%{box-shadow:0 0 24px 6px rgba(160,100,255,0.35),0 0 48px 12px rgba(201,168,76,0.25),0 12px 48px rgba(0,0,0,0.7)}50%{box-shadow:0 0 36px 10px rgba(160,100,255,0.55),0 0 70px 18px rgba(201,168,76,0.4),0 12px 48px rgba(0,0,0,0.7)}}
         @keyframes flicker{0%,100%{opacity:0.7}30%{opacity:1}60%{opacity:0.45}80%{opacity:0.92}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
         video::-webkit-media-controls-overlay-cast-button,
@@ -3038,6 +3486,7 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
         .result-tab:hover{transform:scale(1.08);background:rgba(201,168,76,0.2) !important;box-shadow:0 0 20px rgba(201,168,76,0.5),0 0 40px rgba(201,168,76,0.2) !important;border-color:#c9a84c !important;color:#ffd700 !important;}
       `}</style>
 
+      {showDevGate&&<CameraBlockedPage onUpload={()=>{setShowDevGate(false);setUploadMode(true);setPhase("capture");}}/>}
       <Particles/>
       <div style={{position:"fixed",inset:0,background:"radial-gradient(ellipse at center,transparent 30%,rgba(8,5,16,0.65) 100%)",pointerEvents:"none",zIndex:1}}/>
 
@@ -3066,29 +3515,130 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
 
             
 
-            <button className="gold-btn" onClick={()=>{setPhase("details");}} style={{width:"100%",padding:"15px",fontSize:20,borderRadius:12,margin:"16px 0 0",background:"linear-gradient(135deg,#3b0a6e,#8b2fc9,#c9a84c,#b0405a,#3b0a6e)",backgroundSize:"300%",animation:"shimmer 4s linear infinite",boxShadow:"0 0 24px #8b2fc988, 0 0 48px #c9a84c44",border:"1px solid #8b2fc966",color:"#fff"}}>
-              🔮 Reveal My Fortune
+            <button className="gold-btn" onClick={()=>setShowNavDrawer(true)} style={{width:"100%",padding:"15px",fontSize:20,borderRadius:12,margin:"16px 0 0",background:"linear-gradient(135deg,#3b0a6e,#8b2fc9,#c9a84c,#b0405a,#3b0a6e)",backgroundSize:"300%",animation:"shimmer 4s linear infinite",boxShadow:"0 0 24px #8b2fc988, 0 0 48px #c9a84c44",border:"1px solid #8b2fc966",color:"#fff"}}>
+              Explore the Unknown
             </button>
           </div>
         )}
 
+        {/* NavDrawer */}
+        <NavDrawer
+          isOpen={showNavDrawer}
+          onClose={()=>setShowNavDrawer(false)}
+          onStartReading={(featureId)=>{
+            const savedProfile = getProfile();
+            if(featureId==="soulmate"){
+              setJourneyMode("soulmate");
+              setActiveTab("reading");
+              setPhase(savedProfile ? "welcomeback" : "details");
+            } else {
+              setJourneyMode("fortune");
+              setActiveTab("extras");
+              setPhase(savedProfile ? "welcomeback" : "details");
+            }
+            setShowNavDrawer(false);
+          }}
+        />
+
         {/* ══ DETAILS ══ */}
         {phase==="details"&&(
           <DetailsPage
-            onBack={()=>setPhase("intro")}
+            onBack={()=>{setPhase("intro");setShowNavDrawer(true);}}
             onSubmit={(name, dob)=>{
               setUserName(name);
               setBirthDate(dob);
               // Persist immediately so it survives any subsequent page reload
               try { localStorage.setItem('pendingUserName', name); } catch(e) {}
               try { localStorage.setItem('pendingBirthDate', JSON.stringify(dob)); } catch(e) {}
+              // Save to long-term profile so returning users are remembered
+              saveProfile(name, dob);
               setPhase("capture");
             }}
           />
         )}
 
+        {/* ══ WELCOME BACK ══ */}
+        {phase==="welcomeback"&&(
+          <WelcomeBack
+            journeyMode={journeyMode}
+            onBack={()=>{setPhase("intro");setShowNavDrawer(true);}}
+            onContinue={(name, dob)=>{
+              setUserName(name);
+              setBirthDate(dob);
+              const profile = getProfile();
+              if(!profile?.scanComplete){
+                // Details saved but scan never completed — send to scan
+                setPhase("capture");
+                return;
+              }
+              // Scan previously completed — safe to skip
+              const _seed = generateSeed(name, dob);
+              const seedFortune = generateFortune(_seed, name, dob);
+              setReading(seedFortune);
+              setPalmImage('/madame-zafira-portrait.webp'); // placeholder so nothing downstream breaks
+              if(journeyMode==="soulmate"){
+                // Skip straight to partner details — user is already known
+                setShowPartnerDetailsPage(true);
+                setActiveTab("reading");
+                setPhase("result");
+              } else {
+                // Fortune: clear any stale soulmate state, then show loading animation
+                setShowPartnerDetailsPage(false);
+                setPhase("loading");
+                setTimeout(()=>setPhase("result"), 3200);
+              }
+            }}
+            onReset={()=>setPhase("details")}
+          />
+        )}
+
         {/* ══ CAPTURE ══ */}
 
+        {/* ══ SCAN CHOICE INTERSTITIAL ══ */}
+        {(phase==="capture"&&!cameraOn&&!uploadMode&&!palmError)||(partnerPhase==="capture"&&!partnerCameraOn&&!partnerUploadMode&&!partnerPalmError)?(
+          <PalmScanChoice
+            isPartner={partnerPhase==="capture"}
+            name={partnerPhase==="capture" ? partnerName : userName}
+            onScanLive={()=>{
+              if(partnerPhase==="capture") setPartnerCameraOn(true);
+              else setCameraOn(true);
+            }}
+            onUpload={()=>{
+              if(partnerPhase==="capture") setPartnerUploadMode(true);
+              else setUploadMode(true);
+            }}
+            onCancel={()=>{
+              if(partnerPhase==="capture"){setPartnerPhase(null);setShowPartnerDetailsPage(true);setActiveTab("reading");}
+              else{setPhase("intro");setShowNavDrawer(true);}
+            }}
+          />
+        ):null}
+
+        {/* ══ UPLOAD SCREENS ══ */}
+        {phase==="capture"&&uploadMode&&!palmError&&(
+          <PalmUploadScreen
+            isPartner={false}
+            onCapture={(img,lm)=>{
+              setPalmImage(img);
+              if(lm) setPalmLandmarks(lm);
+              setUploadMode(false);
+              setPhase("freeze");
+            }}
+            onCancel={()=>setUploadMode(false)}
+          />
+        )}
+        {partnerPhase==="capture"&&partnerUploadMode&&!partnerPalmError&&(
+          <PalmUploadScreen
+            isPartner={true}
+            onCapture={(img,lm)=>{
+              setPartnerPalmImage(img);
+              if(lm) setPartnerPalmLandmarks(lm);
+              setPartnerUploadMode(false);
+              setPartnerPhase("freeze");
+            }}
+            onCancel={()=>setPartnerUploadMode(false)}
+          />
+        )}
 
         {/* ══ FULLSCREEN CAMERA ══ */}
         {((phase==="capture"&&cameraOn && !palmError) || (partnerPhase==="capture"&&partnerCameraOn && !partnerPalmError))?(
@@ -3107,6 +3657,11 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                   setPhase("freeze");
                 }
                 stopCamera();
+              }}
+              onUpload={()=>{
+                stopCamera();
+                if(partnerPhase==="capture") setPartnerUploadMode(true);
+                else setUploadMode(true);
               }}
               onCancel={()=>{stopCamera();if(partnerPhase==="capture"){setPartnerPhase(null);setShowPartnerDetailsPage(true);setActiveTab("reading");}else{setPhase("intro");}}}
             />
@@ -3139,33 +3694,78 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
         )}
 
         {/* ══ LOADING ══ */}
-        {phase==="loading"&&(
-          <div style={{position:"fixed",inset:0,zIndex:80,background:"rgba(8,5,16,0.96)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:24}}>
-            <div style={{width:60,height:60,borderRadius:"50%",border:"3px solid rgba(201,168,76,0.2)",borderTop:`3px solid ${C.gold}`,animation:"spin 1s linear infinite"}}/>
-            <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#f5d060",letterSpacing:2,textTransform:"uppercase",animation:"auraPulse 2s ease-in-out infinite",textShadow:"0 0 12px rgba(245,208,96,0.8)"}}>{loadingMessage}</div>
-          </div>
-        )}
+        {phase==="loading"&&(()=>{
+          const LoadingScreen=()=>{
+            const [cosmosPhase,setCosmosPhase]=React.useState(false);
+            React.useEffect(()=>{const t=setTimeout(()=>setCosmosPhase(true),3200);return()=>clearTimeout(t);},[]);
+            const msgs=fullPaid?["The celestial lines are speaking…","Aligning your stars…","The ancient signs converge…","Your truth is being unveiled…"]:["Reading your ancient lines…","The palm reveals its secrets…","Madame Zafira sees all…"];
+            const [msgIdx,setMsgIdx]=React.useState(0);
+            React.useEffect(()=>{const t=setInterval(()=>setMsgIdx(i=>(i+1)%msgs.length),2200);return()=>clearInterval(t);},[]);
+            return(
+              <div style={{position:"fixed",inset:0,zIndex:80,background:"#060412",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                {!cosmosPhase?(
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:28,animation:"fadeIn 0.6s ease both"}}>
+                    <div style={{position:"relative",width:140,height:140}}>
+                      <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"radial-gradient(circle at 40% 35%,#6b3fa0,#2a0d5e 60%,#0d0520)",boxShadow:"0 0 60px rgba(120,60,200,0.6),inset 0 0 40px rgba(180,120,255,0.15)",animation:"orbGlow 3s ease-in-out infinite"}}/>
+                      <div style={{position:"absolute",top:"18%",left:"22%",width:"35%",height:"22%",borderRadius:"50%",background:"rgba(255,255,255,0.12)",filter:"blur(4px)",transform:"rotate(-20deg)"}}/>
+                      <div style={{position:"absolute",inset:0,borderRadius:"50%",border:"2px solid rgba(201,168,76,0.4)",animation:"spin 8s linear infinite"}}/>
+                      <div style={{position:"absolute",inset:6,borderRadius:"50%",border:"1px solid rgba(180,120,255,0.3)",animation:"spin 5s linear infinite reverse"}}/>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#c9a84c",letterSpacing:2.5,textTransform:"uppercase",animation:"auraPulse 2s ease-in-out infinite",marginBottom:8}}>{msgs[msgIdx]}</div>
+                      <div style={{display:"flex",gap:6,justifyContent:"center"}}>{[0,1,2].map(i=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#c9a84c",opacity:0.3,animation:`auraPulse 1.2s ease-in-out ${i*0.4}s infinite`}}/>))}</div>
+                    </div>
+                  </div>
+                ):(
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:28,animation:"fadeIn 0.8s ease both"}}>
+                    <div style={{position:"relative",width:"min(280px,80vw)",height:"min(200px,55vw)",borderRadius:18,overflow:"hidden",boxShadow:"0 0 60px rgba(100,60,180,0.5)"}}>
+                      <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#020008 0%,#0d0635 35%,#050218 65%,#000005 100%)"}}/>
+                      {[...Array(40)].map((_,i)=>{const s=0.5+Math.random()*2.5;return(<div key={i} style={{position:"absolute",left:`${Math.random()*100}%`,top:`${Math.random()*100}%`,width:s,height:s,borderRadius:"50%",background:"white",opacity:0.1+Math.random()*0.8,animation:`auraPulse ${1.5+Math.random()*3}s ease-in-out ${Math.random()*2}s infinite`}}/>);})}
+                      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:"clamp(13px,3.5vw,17px)",color:"rgba(230,210,255,0.85)",textAlign:"center",padding:"0 20px",lineHeight:1.7,textShadow:"0 0 20px rgba(180,140,255,0.5)"}}>
+                          "What the heavens wrote on the night you were born, the palm confirmed…"
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:"#c9a84c",letterSpacing:2.5,textTransform:"uppercase",animation:"auraPulse 2s ease-in-out infinite",marginBottom:8}}>Consulting the cosmos…</div>
+                      <div style={{display:"flex",gap:6,justifyContent:"center"}}>{[0,1,2].map(i=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#c9a84c",opacity:0.3,animation:`auraPulse 1.2s ease-in-out ${i*0.4}s infinite`}}/>))}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          };
+          return <LoadingScreen/>;
+        })()}
 
         {/* ══ RESULT ══ */}
         {phase==="result"&&reading&&(
           <div style={{paddingTop:28,paddingBottom:20,animation:"fadeUp 0.6s ease both"}}>
-            <Steps current={2} revealed={fullPaid||subscribed}/>
-            <Seraphina speaking={speaking} phase="result" mood={mood} videoRef={videoRef2} muted={muted} setMuted={setMuted}/>
+            {!(showPartnerDetailsPage&&journeyMode==="soulmate")&&<Steps current={2} revealed={fullPaid||subscribed}/>}
+            {!(showPartnerDetailsPage&&journeyMode==="soulmate")&&(journeyMode==="fortune"
+              ? <CrystalBallOracle speaking={speaking} mood={mood}/>
+              : <Seraphina speaking={speaking} phase="result" mood={mood} videoRef={videoRef2} muted={muted} setMuted={setMuted}/>
+            )}
             {/* GREETING TEXT — removed by user request. Restore by uncommenting:
             <div style={{textAlign:"center",margin:"10px 0 14px"}}>
               <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.rose,fontSize:22,lineHeight:1.6}}>{reading.greeting}</div>
             </div>
             */}
 
-            <div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:12,gap:6}}>
-              {!partnerPhase&&[["extras","🃏","Today's Fortune"],["lines","💎","Full Revelation"],["reading","💖","Partner Compatibility"]].map(([id,icon,label])=>(
-                <button key={id} disabled={showPartnerDetailsPage&&id!=="reading"} onClick={()=>{if(showPartnerDetailsPage&&id!=="reading")return;if(fullPaid&&!subscribed&&activeTab==="lines"&&id!=="lines"&&!fullPDFSaved){setShowFullLeaveWarning(true);setPendingFullLeave(()=>()=>setActiveTab(id));return;}setActiveTab(id);if(id==="reading"){devPartnerTapRef.current=(devPartnerTapRef.current||0)+1;clearTimeout(devPartnerTimerRef.current);if(devPartnerTapRef.current>=3){devPartnerTapRef.current=0;const cr=generatePartnerCompatibility(userName,birthDate,partnerName||"Test Partner",partnerBirthDate||{day:1,month:6,year:1990});setPartnerPaid(true);setPartnerReadingResult(cr);setPartnerPhase("result");}else{devPartnerTimerRef.current=setTimeout(()=>{devPartnerTapRef.current=0;},1500);}}}} className="result-tab"
+            {!(showPartnerDetailsPage&&journeyMode==="soulmate")&&<div style={{display:"flex",borderBottom:`1px solid ${C.border}`,marginBottom:12,gap:6}}>
+              {!partnerPhase&&(journeyMode==="soulmate"?[["reading","💖","Partner Compatibility"]]:[["extras","🃏","Today's Fortune"],["lines","💎","Full Revelation"]]).map(([id,icon,label])=>(
+                <button key={id} disabled={showPartnerDetailsPage&&id!=="reading"} onClick={()=>{
+                  if(showPartnerDetailsPage&&id!=="reading")return;
+                  setActiveTab(id);
+                  if(id==="reading"){devPartnerTapRef.current=(devPartnerTapRef.current||0)+1;clearTimeout(devPartnerTimerRef.current);if(devPartnerTapRef.current>=3){devPartnerTapRef.current=0;const cr=generatePartnerCompatibility(userName,birthDate,partnerName||"Test Partner",partnerBirthDate||{day:1,month:6,year:1990});setPartnerPaid(true);setPartnerReadingResult(cr);setPartnerPhase("result");}else{devPartnerTimerRef.current=setTimeout(()=>{devPartnerTapRef.current=0;},1500);}}
+                }} className="result-tab"
                   style={{flex:1,background:activeTab===id?`${C.gold}22`:"rgba(201,168,76,0.08)",border:`1px solid ${activeTab===id?C.gold:"rgba(201,168,76,0.3)"}`,borderBottom:`3px solid ${activeTab===id?C.gold:"transparent"}`,color:activeTab===id?C.gold:"rgba(201,168,76,0.6)",fontFamily:"Cinzel,serif",fontSize:10,letterSpacing:1,textTransform:"uppercase",padding:"10px 8px",cursor:(showPartnerDetailsPage&&id!=="reading")?"not-allowed":"pointer",transition:"all 0.3s ease",display:"flex",flexDirection:"column",alignItems:"center",gap:3,borderRadius:"8px 8px 0 0",boxShadow:activeTab===id?`0 0 15px ${C.gold}44`:"none",animation:activeTab===id?"tabPulse 2s ease-in-out infinite":"none",transform:"none",opacity:(showPartnerDetailsPage&&id!=="reading")?0.3:1}}>
                   <span style={{fontSize:20,transition:"transform 0.3s ease"}}>{icon}</span>
                   <span style={{fontWeight:activeTab===id?700:600,color:activeTab===id?C.gold:"#c9a84c",animation:activeTab===id?"tabTextPulse 2s ease-in-out infinite":"none"}}>{label}</span>
                 </button>
               ))}
-            </div>
+            </div>}
 
             {/* ══ READING TAB ══ */}
             {!partnerPhase&&activeTab==="reading"&&(
@@ -3173,8 +3773,20 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                 {showPartnerDetailsPage?(
                   // Partner Details Page
                   <div style={{animation:"fadeIn 0.3s ease both"}}>
+
+                    {/* Back button */}
+                    <button
+                      onClick={()=>{setPhase("intro");setShowNavDrawer(true);setShowPartnerDetailsPage(false);setReading(null);}}
+                      style={{background:"none",border:"1.5px solid #6040a0",color:"#b89fcc",fontFamily:"Cinzel,serif",fontSize:12,letterSpacing:1,cursor:"pointer",padding:"7px 16px",borderRadius:8,display:"inline-flex",alignItems:"center",gap:6,marginBottom:20,transition:"border-color 0.2s,color 0.2s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.borderColor=C.gold;e.currentTarget.style.color=C.gold;}}
+                      onMouseLeave={e=>{e.currentTarget.style.borderColor="#6040a0";e.currentTarget.style.color="#b89fcc";}}
+                    >
+                      ← Back
+                    </button>
+
+                    {/* Logo + heading */}
                     <div style={{textAlign:"center",marginBottom:24}}>
-                      <div style={{fontSize:36,marginBottom:12}}>💕</div>
+                      <img src="/Mystic_Fortunes_Logo_cropped.webp" alt="Mystic Fortunes" style={{width:"clamp(180px,60vw,280px)",height:"auto",display:"block",margin:"0 auto 12px",filter:"drop-shadow(0 0 10px #c9a84c55)"}}/>
                       <h2 style={{fontFamily:"Cinzel,serif",fontSize:24,color:C.gold,margin:"0 0 8px",letterSpacing:1}}>Your Partner's Details</h2>
                       <p style={{fontFamily:"Crimson Text,serif",fontSize:15,color:C.cream,margin:0}}>Tell me about your someone special so I can align your cosmic connection</p>
                     </div>
@@ -3341,13 +3953,26 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                     const dobStr = birthDate&&birthDate.day&&birthDate.month&&birthDate.year ? `${birthDate.day} ${MONTHS[birthDate.month-1]} ${birthDate.year}` : '';
                     const zodiac = getZodiac(birthDate);
                     return dobStr ? (
-                      <div style={{fontFamily:"Cinzel,serif",fontSize:17,color:C.gold,letterSpacing:2,marginBottom:4}}>
-                        {dobStr}{zodiac ? <span style={{marginLeft:10}}>{zodiac.emoji} {zodiac.sign}</span> : null}
+                      <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:C.gold,letterSpacing:2,marginBottom:4}}>
+                        {dobStr}{zodiac ? <span style={{marginLeft:8}}>{zodiac.emoji} {zodiac.sign}</span> : null}
                       </div>
                     ) : null;
                   })()}
+                  {reading?.astroProfile&&(()=>{
+                    const ap=reading.astroProfile;
+                    const parts=[];
+                    if(ap.moonSign)  parts.push(`🌙 ${ap.moonSign} Moon`);
+                    if(ap.risingSign)parts.push(`⬆ ${ap.risingSign} Rising`);
+                    if(ap.lifePath)  parts.push(`✦ Life Path ${ap.lifePath}`);
+                    if(ap.birthPlace)parts.push(`📍 ${ap.birthPlace}`);
+                    return parts.length>0?(
+                      <div style={{fontFamily:"Cinzel,serif",fontSize:11,color:"rgba(201,168,76,0.75)",letterSpacing:1.5,marginBottom:6,lineHeight:1.8}}>
+                        {parts.join("  ·  ")}
+                      </div>
+                    ):null;
+                  })()}
                   <div style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",fontSize:14,color:C.gold,letterSpacing:1.5}}>✦ A Personal Palm Reading by Madame Zafira ✦</div>
-                  <div style={{fontFamily:"Cinzel,serif",fontSize:14,color:C.gold,letterSpacing:1.5,marginTop:4}}>{new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:13,color:C.gold,letterSpacing:1.5,marginTop:4}}>{new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div>
                 </div>
                 {[["💗 Heart Line",reading.heartLine,C.rose],["🧠 Head Line",reading.headLine,"#6070d8"],["✋ Life Line",reading.lifeLine,C.teal]].map(([title,text,color])=>(
                   <div key={title} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:8,borderLeft:`3px solid ${color}`}}>
@@ -3360,6 +3985,17 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                     }
                   </div>
                 ))}
+                {/* Fate Line — paywalled */}
+                <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:8,borderLeft:`3px solid ${C.gold}`}}>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6,fontWeight:700}}>🌟 Fate Line</div>
+                  {(fullPaid||subscribed)?
+                    <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{reading.fateLine}</p>:
+                    <div style={{filter:"blur(5px)",pointerEvents:"none"}}>
+                      <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:17,color:C.cream,margin:0,lineHeight:1.85}}>{(reading.fateLine||"").slice(0,160)}…</p>
+                    </div>
+                  }
+                </div>
+
                 {/* Your Gift — paywalled */}
                 <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px",marginBottom:8}}>
                   <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:C.teal,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6,fontWeight:700,opacity:1}}>✨ Your Gift</div>
@@ -3395,7 +4031,7 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
 
                 {/* Next 30 Days — paywalled */}
                 <div style={{background:"linear-gradient(135deg,rgba(25,12,45,0.8),rgba(45,15,28,0.8))",border:`1px solid ${C.gold}2a`,borderRadius:12,padding:"13px",marginBottom:8}}>
-                  <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6,cursor:"pointer",userSelect:"none",fontWeight:700,opacity:1}} onClick={()=>{devPaidTapRef.current=(devPaidTapRef.current||0)+1;clearTimeout(devPaidTimerRef.current);if(devPaidTapRef.current>=3){devPaidTapRef.current=0;setFullPaid(true);setActiveTab("lines");}else{devPaidTimerRef.current=setTimeout(()=>{devPaidTapRef.current=0;},1200);}}}>🌟 The Coming Months</div>
+                  <div style={{fontFamily:"Cinzel,serif",fontSize:15,color:C.gold,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6,cursor:"pointer",userSelect:"none",fontWeight:700,opacity:1}} onClick={()=>{devPaidTapRef.current=(devPaidTapRef.current||0)+1;clearTimeout(devPaidTimerRef.current);if(devPaidTapRef.current>=3){devPaidTapRef.current=0;setFullPaid(false);setShowNatalScreen(false);setTimeout(()=>setFullPaid(true),50);setActiveTab("lines");}else{devPaidTimerRef.current=setTimeout(()=>{devPaidTapRef.current=0;},1200);}}}>🌟 The Coming Months</div>
                   {(fullPaid||subscribed)?
                     <p style={{fontFamily:"Crimson Text,serif",fontStyle:"italic",fontSize:19,color:C.cream,margin:0,lineHeight:1.85}}>{reading.nearFuture}</p>:
                     <div style={{filter:"blur(5px)",pointerEvents:"none"}}>
@@ -3441,9 +4077,9 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                 {!fullPaid&&!subscribed&&(
                   <div style={{background:"linear-gradient(135deg,#100616,#0c0812)",border:`1px solid ${C.gold}38`,borderRadius:14,padding:"18px 16px",marginBottom:10,textAlign:"center",animation:"orbGlow 4s ease-in-out infinite"}}>
                     <div style={{fontSize:24,marginBottom:8}}>🔮</div>
-                    <h3 style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.gold,margin:"0 0 6px",cursor:"pointer",userSelect:"none"}} onClick={()=>{devTapRef.current=(devTapRef.current||0)+1;clearTimeout(devTapTimerRef.current);if(devTapRef.current>=3){devTapRef.current=0;setFullPaid(true);}else{devTapTimerRef.current=setTimeout(()=>{devTapRef.current=0;},1200);}}}>The Full Revelation Awaits</h3>
+                    <h3 style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.gold,margin:"0 0 6px",cursor:"pointer",userSelect:"none"}} onClick={()=>{devTapRef.current=(devTapRef.current||0)+1;clearTimeout(devTapTimerRef.current);if(devTapRef.current>=3){devTapRef.current=0;setFullPaid(false);setShowNatalScreen(false);setTimeout(()=>setFullPaid(true),50);}else{devTapTimerRef.current=setTimeout(()=>{devTapRef.current=0;},1200);}}}>The Full Revelation Awaits</h3>
                     <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.cream,fontSize:19,lineHeight:1.85,margin:"0 0 12px"}}>"I have shown you only a glimpse of your future... The full truth is far more revealing... If you wish to uncover what truly awaits you, you must allow me to complete the reading."</p>
-                    <p style={{fontFamily:"Cinzel,serif",color:"#c090ff",fontSize:14,lineHeight:1.7,margin:"0 0 10px",fontWeight:500,letterSpacing:0.5}}>Full palm analysis · Your Gift · Heed This · Past life echo · The coming months · Your True Path · PDF Download</p>
+                    <p style={{fontFamily:"Cinzel,serif",color:"#c090ff",fontSize:14,lineHeight:1.7,margin:"0 0 10px",fontWeight:500,letterSpacing:0.5}}>Heart · Head · Life · Fate lines · Your Gift · Heed This · Past Life · The Coming Months · Your True Path · PDF Download</p>
                     <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center",margin:"10px 0"}}>
                       <span style={{fontFamily:"Cinzel,serif",fontSize:14,color:"#c090ff",textDecoration:"line-through"}}>$9.99</span>
                       <span style={{fontFamily:"Cinzel,serif",fontSize:28,color:C.gold,fontWeight:700}}>$3.99</span>
@@ -3520,9 +4156,9 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                 {!fullPaid&&!subscribed&&(
                   <div style={{background:"linear-gradient(135deg,#100616,#0c0812)",border:`1px solid ${C.gold}38`,borderRadius:14,padding:"18px 16px",marginBottom:10,textAlign:"center",animation:"orbGlow 4s ease-in-out infinite"}}>
                     <div style={{fontSize:24,marginBottom:8}}>🔮</div>
-                    <h3 style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.gold,margin:"0 0 6px",cursor:"pointer",userSelect:"none"}} onClick={()=>{devTapRef.current=(devTapRef.current||0)+1;clearTimeout(devTapTimerRef.current);if(devTapRef.current>=3){devTapRef.current=0;setFullPaid(true);}else{devTapTimerRef.current=setTimeout(()=>{devTapRef.current=0;},1200);}}}>The Full Revelation Awaits</h3>
+                    <h3 style={{fontFamily:"Cinzel,serif",fontSize:18,color:C.gold,margin:"0 0 6px",cursor:"pointer",userSelect:"none"}} onClick={()=>{devTapRef.current=(devTapRef.current||0)+1;clearTimeout(devTapTimerRef.current);if(devTapRef.current>=3){devTapRef.current=0;setFullPaid(false);setShowNatalScreen(false);setTimeout(()=>setFullPaid(true),50);}else{devTapTimerRef.current=setTimeout(()=>{devTapRef.current=0;},1200);}}}>The Full Revelation Awaits</h3>
                     <p style={{fontFamily:"IM Fell English,serif",fontStyle:"italic",color:C.cream,fontSize:19,lineHeight:1.85,margin:"0 0 12px"}}>"I have shown you only a glimpse of your future... The full truth is far more revealing... If you wish to uncover what truly awaits you, you must allow me to complete the reading."</p>
-                    <p style={{fontFamily:"Cinzel,serif",color:"#c090ff",fontSize:14,lineHeight:1.7,margin:"0 0 10px",fontWeight:500,letterSpacing:0.5}}>Full palm analysis · Your Gift · Heed This · Past life echo · The coming months · Your True Path · PDF Download</p>
+                    <p style={{fontFamily:"Cinzel,serif",color:"#c090ff",fontSize:14,lineHeight:1.7,margin:"0 0 10px",fontWeight:500,letterSpacing:0.5}}>Heart · Head · Life · Fate lines · Your Gift · Heed This · Past Life · The Coming Months · Your True Path · PDF Download</p>
                     <div style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center",margin:"10px 0"}}>
                       <span style={{fontFamily:"Cinzel,serif",fontSize:14,color:"#c090ff",textDecoration:"line-through"}}>$9.99</span>
                       <span style={{fontFamily:"Cinzel,serif",fontSize:28,color:C.gold,fontWeight:700}}>$3.99</span>
@@ -3542,7 +4178,7 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
           <>
             {!(activeTab==="lines"&&(fullPaid||subscribed))&&<Divider/>}
             {activeTab==="extras"&&(
-              <button onClick={()=>{setPhase("intro");setReading(null);setPalmImage(null);setPartnerPaid(false);setFullPaid(false);setSubscribed(false);setSpeaking(false);setUserName("");try{localStorage.removeItem('pendingUserName');localStorage.removeItem('pendingBirthDate');localStorage.removeItem('pendingReading');}catch(e){}}}
+              <button onClick={()=>{setPhase("intro");setShowNavDrawer(true);setReading(null);setPalmImage(null);setPartnerPaid(false);setFullPaid(false);setSubscribed(false);setSpeaking(false);setUserName("");setShowPartnerDetailsPage(false);setJourneyMode("fortune");setActiveTab("extras");try{localStorage.removeItem('pendingUserName');localStorage.removeItem('pendingBirthDate');localStorage.removeItem('pendingReading');}catch(e){}}}
                 style={{width:"100%",padding:"12px",fontSize:14,borderRadius:9,background:"rgba(148,90,210,0.18)",border:"1px solid rgba(148,90,210,0.6)",color:"#c090ff",fontFamily:"Cinzel,serif",letterSpacing:1,cursor:"pointer",marginTop:8,marginBottom:8}}>
                 🔄 Begin a New Reading
               </button>
@@ -3552,6 +4188,32 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
                 style={{width:"100%",padding:"12px",fontSize:14,borderRadius:9,background:"rgba(148,90,210,0.18)",border:"1px solid rgba(148,90,210,0.6)",color:"#c090ff",fontFamily:"Cinzel,serif",letterSpacing:1,cursor:"pointer"}}>
                 ← Back to Today's Fortune
               </button>
+            )}
+
+            {/* Footer for Full Revelation Page */}
+            {activeTab==="lines"&&(fullPaid||subscribed)&&(
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,marginTop:40,paddingTop:20,paddingBottom:16,borderTop:"1px solid rgba(201,168,76,0.15)"}}>
+
+                {/* Begin a New Reading */}
+                <button
+                  onClick={()=>{
+                    const doReset=()=>{setPhase("intro");setShowNavDrawer(true);setReading(null);setPalmImage(null);setPartnerPaid(false);setFullPaid(false);setSubscribed(false);setSpeaking(false);setUserName("");setShowPartnerDetailsPage(false);setJourneyMode("fortune");setActiveTab("extras");try{localStorage.removeItem('pendingUserName');localStorage.removeItem('pendingBirthDate');localStorage.removeItem('pendingReading');}catch(e){}};
+                    if(!fullPDFSaved){setShowFullLeaveWarning(true);setPendingFullLeave(()=>doReset);}
+                    else doReset();
+                  }}
+                  style={{width:"100%",padding:"12px",fontSize:14,borderRadius:9,background:"rgba(148,90,210,0.18)",border:"1px solid rgba(148,90,210,0.6)",color:"#c090ff",fontFamily:"Cinzel,serif",letterSpacing:1,cursor:"pointer",marginBottom:16}}>
+                  🔄 Begin a New Reading
+                </button>
+
+                <p style={{fontFamily:"Cinzel,serif",fontSize:"clamp(13px, 3.5vw, 16px)",color:"rgba(201,168,76,0.85)",margin:0,letterSpacing:"2px",textShadow:"0 0 12px rgba(201,168,76,0.4)"}}>
+                  🔮 MysticFortunes.AI
+                </p>
+                <div style={{display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap"}}>
+                  <Link to="/privacy-policy" target="_blank" className="footer-link">Privacy Policy</Link>
+                  <span style={{color:C.border}}>•</span>
+                  <Link to="/terms-and-conditions" target="_blank" className="footer-link">Terms & Conditions</Link>
+                </div>
+              </div>
             )}
 
           </>
@@ -3674,40 +4336,26 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
 
       {/* Global Footer Links - always visible */}
       {phase!=="capture"&&!(activeTab==="lines"&&(fullPaid||subscribed))&&(
-        <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:8,paddingTop:12,paddingBottom:16,flexWrap:"wrap"}}>
-          <Link to="/privacy-policy" target="_blank" className="footer-link">Privacy Policy</Link>
-          <span style={{color:C.border}}>•</span>
-          <Link to="/terms-and-conditions" target="_blank" className="footer-link">Terms & Conditions</Link>
-          <span style={{color:C.border}}>•</span>
-          <div style={{position:"relative",display:"inline-block",paddingTop:4}} onMouseEnter={()=>setShowBlogDropdown(true)} onMouseLeave={()=>setShowBlogDropdown(false)}>
-            <button onClick={()=>setShowBlogDropdown(!showBlogDropdown)} style={{background:"none",border:"none",color:"#ffe083",fontFamily:"Cinzel,serif",fontSize:11,letterSpacing:1,textDecoration:"none",cursor:"pointer",padding:0,transition:"color 0.3s"}}>
-              Madame Zafira's Insights ▼
-            </button>
-            {showBlogDropdown&&(
-              <div style={{position:"absolute",bottom:"100%",left:0,background:"#100c1a",border:`1px solid ${C.border}`,borderRadius:8,minWidth:220,zIndex:1000,boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}>
-                <Link to="/blog/broken-life-line" className="footer-link" style={{display:"block",padding:"10px 16px",borderBottom:`1px solid ${C.border}`,textDecoration:"none"}}>
-                  Broken Life Line
-                </Link>
-                <Link to="/blog/broken-heart-line" className="footer-link" style={{display:"block",padding:"10px 16px",borderBottom:`1px solid ${C.border}`,textDecoration:"none"}}>
-                  Broken Heart Line
-                </Link>
-                <Link to="/blog/palmistry-fate-line" className="footer-link" style={{display:"block",padding:"10px 16px",textDecoration:"none"}}>
-                  The Fate Line
-                </Link>
-              </div>
-            )}
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,marginTop:8,paddingTop:12,paddingBottom:16,borderTop:"1px solid rgba(201,168,76,0.15)"}}>
+          <p style={{fontFamily:"Cinzel,serif",fontSize:"clamp(13px, 3.5vw, 16px)",color:"rgba(201,168,76,0.85)",margin:0,letterSpacing:"2px",textShadow:"0 0 12px rgba(201,168,76,0.4)"}}>
+            🔮 MysticFortunes.AI
+          </p>
+          <div style={{display:"flex",justifyContent:"center",gap:16,flexWrap:"wrap"}}>
+            <Link to="/privacy-policy" target="_blank" className="footer-link">Privacy Policy</Link>
+            <span style={{color:C.border}}>•</span>
+            <Link to="/terms-and-conditions" target="_blank" className="footer-link">Terms & Conditions</Link>
           </div>
         </div>
       )}
       
-      {/* Full Revelation Leave Warning */}
+      {/* Leave Warning */}
       {showFullLeaveWarning&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10000,backdropFilter:"blur(4px)"}}>
           <div style={{background:"#100c1a",border:"2px solid #c9a84c",borderRadius:16,padding:36,maxWidth:420,width:"90%",textAlign:"center"}}>
-            <div style={{fontSize:36,marginBottom:12}}>📜</div>
-            <h3 style={{fontFamily:"Cinzel,serif",fontSize:20,color:"#c9a84c",margin:"0 0 14px",fontWeight:700}}>Save Your Reading First</h3>
+            <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
+            <h3 style={{fontFamily:"Cinzel,serif",fontSize:20,color:"#c9a84c",margin:"0 0 14px",fontWeight:700}}>Save Before You Leave</h3>
             <p style={{fontFamily:"Crimson Text,serif",fontSize:16,color:"#e8d5b8",lineHeight:1.8,margin:"0 0 24px"}}>
-              Once you leave this page, your reading will be gone forever. Download your <strong style={{color:"#c9a84c"}}>PDF</strong> before continuing.
+              Once you leave this page, your reading will be gone forever. Make sure you have saved your <strong style={{color:"#c9a84c"}}>share card</strong>{fullPaid&&!fullPDFSaved?" or downloaded your PDF":""} before continuing.
             </p>
             <div style={{display:"flex",gap:12}}>
               <button onClick={()=>setShowFullLeaveWarning(false)}
@@ -3725,7 +4373,7 @@ Respond ONLY with this JSON (no preamble, nothing before or after): {"greeting":
 
       {/* Fullscreen Share Card */}
       {showFullscreenShareCard && reading && (
-        <FullScreenShareCard reading={reading} userName={userName} birthDate={birthDate} onClose={()=>setShowFullscreenShareCard(false)} todayFortune={todayFortune}/>
+        <FullScreenShareCard reading={reading} userName={userName} birthDate={birthDate} onClose={()=>setShowFullscreenShareCard(false)} todayFortune={todayFortune} onSaved={()=>setFortuneShareSaved(true)}/>
       )}
 
       {/* Partner Fullscreen Share Card */}

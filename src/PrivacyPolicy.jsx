@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
       <div style={{maxWidth:700,margin:"0 auto",padding:"40px 20px 60px",position:"relative",zIndex:2}}>
         <div style={{marginBottom:40}}>
           <h1 style={{fontFamily:"Cinzel,serif",fontSize:40,color:C.gold,textAlign:"center",margin:"0 0 10px"}}>Privacy Policy</h1>
-          <p style={{fontFamily:"Cinzel,serif",fontSize:12,color:C.goldDim,textAlign:"center",letterSpacing:1,margin:0}}>Last updated: March 2026</p>
+          <p style={{fontFamily:"Cinzel,serif",fontSize:12,color:C.goldDim,textAlign:"center",letterSpacing:1,margin:0}}>Last updated: April 2026</p>
         </div>
 
         <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:30}}>
@@ -60,6 +60,13 @@ export default function PrivacyPolicy() {
             <h2 style={{fontFamily:"Cinzel,serif",fontSize:20,color:C.gold,marginBottom:12}}>Data Sharing</h2>
             <p style={{fontFamily:"Crimson Text,serif",fontSize:16,color:C.cream,lineHeight:1.8,margin:0}}>
               We do not share, sell, or distribute your personal information to any third parties. Your data is yours alone. We do not sell your information to advertisers, marketers, or any other organizations.
+            </p>
+          </section>
+
+          <section style={{marginBottom:30}}>
+            <h2 style={{fontFamily:"Cinzel,serif",fontSize:20,color:C.gold,marginBottom:12}}>Payment Processing</h2>
+            <p style={{fontFamily:"Crimson Text,serif",fontSize:16,color:C.cream,lineHeight:1.8,margin:0}}>
+              Payments are processed securely by Stripe, Inc. When you make a purchase, your payment details (including card number, expiry date, and billing address) are collected and processed directly by Stripe. We do not store, handle, or have access to your full payment card information at any point. Stripe may collect and retain transaction data in accordance with their own Privacy Policy, available at stripe.com/privacy. By making a purchase, you also agree to Stripe's terms of service.
             </p>
           </section>
 

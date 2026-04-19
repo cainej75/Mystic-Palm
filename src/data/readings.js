@@ -166,22 +166,57 @@ export const PERSONALITY_SHADOW = [
   ];
 
 export const INSIGHTS = [
-    "Your hearts beat in synchrony. The lines of your hands speak of a bond written in the stars — deep, true, and meant to weather all storms. Together, you are each other's sanctuary.",
-    "The universe has woven your destinies together with silver threads. What you share transcends the ordinary — a connection that was decided long before you met.",
-    "Two souls, perfectly aligned. Your compatibility runs deeper than passion; it is a recognition of something ancient and sacred that only you two understand.",
-    "The stars have aligned your paths for a reason. Your bond is not random — it is written in the fabric of your existence. This is a love story written in the stars.",
-    "Your connection carries the weight of destiny. In each other's hands, you have found not just a partner, but a mirror of your truest self. This is profound compatibility.",
-    "The lines reveal what your hearts already know — you were meant to find each other. Your compatibility is cosmic, your love is written in the heavens.",
-    "Together, you create something larger than yourselves. Your souls recognize each other from lifetimes past. This union was written in the stars long ago.",
-    "A bond this strong doesn't happen by chance — it is orchestrated by forces far greater than chance. Your compatibility speaks of a love meant to transcend time.",
-    "The ancient forces of the universe smile upon your connection. You have found in each other a completeness that only a few are blessed to experience.",
-    "Your hearts are two flames that merge into one eternal light. The compatibility between you is not just romantic — it is deeply, profoundly spiritual.",
-    "Across lifetimes and worlds, your souls have sought each other. Now that you have found each other, nothing can diminish what you share.",
-    "The palmistry speaks of a union blessed by the cosmos itself. Your love is written not in words, but in the very essence of who you both are.",
-    "What exists between you is rarer than diamonds and deeper than oceans. Your compatibility is a testament to the power of two souls aligned perfectly.",
-    "The lines of your hands form a story that began long before you were born. This connection was destined, written, and sealed by the universe itself.",
-    "You have found in each other what the soul spends lifetimes searching for — true recognition, true belonging, true love. This is ultimate compatibility.",
-  ];
+    "The lines do not lie. What exists between you was not built — it was recognised. Two souls arriving at the same moment, each carrying exactly what the other had been missing.",
+    "There is a current between you that most people spend their entire lives searching for. The palm does not manufacture this. It only confirms what was already true.",
+    "Not every connection leaves a mark on the lines. Yours does. Whatever this is — wherever it leads — it has already changed the shape of you both.",
+    "The universe is precise when it brings two people together. There are no accidents in this. You were each other's next necessary step.",
+    "Something in you knew before your mind caught up. That recognition — that pull — is written here as clearly as anything the palm can say.",
+    "What the stars arranged between you is not ordinary. It asked something of both of you to arrive here. The lines say the asking was worth it.",
+    "Two different roads, two different stories — and yet the lines converge as though they were always headed here. Some meetings are architecture, not accident.",
+    "This is a connection that will outlast its reasons. Long after the beginning fades, something more durable will have taken root. The palm sees it clearly.",
+    "There is a quality to this bond that most people only read about. The lines confirm what your instincts have always suspected — this one is different.",
+    "The cosmos does not arrange introductions casually. When two palm signatures align like this, something larger than both people is at work.",
+    "Whatever drew you to each other, the lines say it goes deeper than attraction. There is recognition here — the sense of someone already known.",
+    "What you have built, or are building, has weight. The kind that does not disappear when things become difficult. That permanence is written in the lines.",
+    "The pull between you is not random. It carries direction — something you are meant to discover together that neither of you could find alone.",
+    "Some connections teach. Some comfort. Some transform. The lines suggest yours intends to do all three, in ways neither of you can fully predict yet.",
+    "This is not the beginning of something ordinary. The palm lines of two people rarely align this way. When they do, the universe is paying attention.",
+    "The marks left by this connection are not surface-level. They run through the deeper lines — the ones that speak of who a person is becoming, not just who they have been.",
+    "Two people can share space and remain strangers. What the lines reveal here is something rarer — a genuine meeting, the kind that leaves both people different.",
+    "There is an ease between your signatures that is not explained by circumstance. The palm reads it as familiarity — the kind that skips the surface and goes straight to the truth.",
+    "The timing of this connection was not random. Both of you were ready in ways you may not have named yet. The lines show what the moment required of each of you.",
+    "What the palm sees is not just compatibility — it is consequence. This connection is going to matter. It already does.",
+    "Some bonds are formed by choice and some by gravity. The lines suggest yours has both — a decision made easier because something was already pulling you toward each other.",
+    "The question the palm raises is not whether this connection is real. It is what you will build with what is clearly, unmistakably, already here.",
+    "You did not find each other by chance. The lines of the hand record what the heart already knows — this was always going to happen.",
+    "Most people settle for connections that are comfortable. The lines suggest you have found something rarer — one that is both comfortable and extraordinary.",
+    "What is between you has survived the moment of meeting and taken on a shape of its own. That shape, as the lines reveal it, is built to last.",
+    "There is a steadiness in what the lines record here. Not the excitement of something new — the deeper certainty of something true.",
+    "The palm does not flatter. When it speaks of a connection this clearly, it is because something genuinely worth noting is present between these two people.",
+    "Not every beginning becomes a story. The lines suggest yours already has the shape of one — the kind worth telling.",
+    "What the lines reveal is a connection that operates at depth. The surface of it — how you met, how you feel — is only the beginning of what this is.",
+    "There is something in the alignment of your signatures that speaks of long-term consequence. Whatever this becomes, it will not be forgotten by either of you.",
+    "The lines record what the mind rationalises away. What they show here cannot be explained by logic alone. Something larger arranged this.",
+    "A connection this clear in the lines is rare. The palm sees many people, many bonds — and marks very few the way it marks this one.",
+    "You each carry something the other has been waiting for without fully knowing it. The lines show the fit — not perfect, but true, and that is more valuable.",
+    "The pull between your signatures suggests this connection found you as much as you found it. Some things arrive on their own schedule, and this was always on its way.",
+    "What is between you does not need to be explained or justified. The lines say it plainly — this is real, and it is worth everything it will ask of you.",
+    "The palm records the connections that change us. This one is in that category. You are not the same people you were before this began.",
+    "There is a quality to the bond between your signatures that the palm recognises as unusual. Not loud — deep. The kind that holds.",
+    "Two people can be compatible and still remain separate. What the lines suggest here is something beyond compatibility — a genuine intertwining of paths.",
+    "The lines do not promise easy. They promise worth it. And what they show between you falls squarely in that category.",
+    "What the cosmos wrote between your signatures was not a suggestion. It was a conclusion. The only question that remains is what you do with it.",
+    "There are people who pass through our lives and people who change their shape. The lines are clear about which category this connection belongs to.",
+    "The recognition you felt was not imagination. The palm confirms it — something in each of you already knew something in the other before words were involved.",
+    "This connection carries information. The lines suggest that what you learn through each other — about yourselves, about what is possible — will outlast the relationship itself.",
+    "What the palm sees here is a bond with roots. Surface connections wither easily. This one is anchored to something that does not shift.",
+    "The lines show two people arriving at the same place from opposite directions. That kind of convergence is not coincidence. It is design.",
+    "There is a generosity in this connection — each of you carrying something that makes the other's life larger. The lines record that exchange as significant.",
+    "The palm marks connections that matter differently to those that merely feel good. This one matters. The lines are unambiguous about that.",
+    "What exists between your signatures is not a projection or a wish. The lines are reading something real — a bond that has earned its place in both of your stories.",
+    "Some people are placed in our lives to reflect us back to ourselves. The lines suggest this is one of those connections — and that what is reflected is worth seeing.",
+    "The palm has seen many connections. It marks very few as clearly as this. Whatever you call what is between you — the lines have already named it something rare.",
+];
 
 export const ALIGNMENT_TEXTS = [
     "The celestial forces governing your union speak of a connection built to last through seasons of joy and seasons of trial. Your energies do not merely complement each other — they complete each other in ways that few ever experience. Lean into what you have built, for the universe rewards those who nurture bonds of this depth.",
@@ -511,3 +546,244 @@ export const getSeraphinaClosings = (name) => [
     `What I want you to carry from this reading, ${name}, is not the individual predictions — it is the overall impression: you are enough. You are more than enough. And the life available to you is larger than the one you have been giving yourself permission to want.`,
   ];
 
+export const getDailyFortunes = (n) => [
+
+  // ── ACTION / MOVE NOW ────────────────────────────────────────────
+
+  `The universe conspires in your favour today, ${n} — but only if you take the first step. Something you have been waiting for permission to begin needs no permission but your own. Trust that the timing is perfect, even when it feels uncertain.`,
+
+  `Today carries an unusual momentum, ${n}. The action you have been postponing is precisely the one the universe is waiting for you to take. Your hesitation has served its purpose — now let it go.`,
+
+  `A door that has been closed for some time is looser on its hinges today, ${n}. A gentle push is all it requires. What you thought was locked away may be more accessible than you believe.`,
+
+  `The stars have cleared a path for you today, ${n}. The obstacle you were preparing to navigate has moved. Walk forward without waiting for confirmation. The universe has already given it.`,
+
+  `Today is not a day for planning, ${n}. It is a day for doing the thing the plan has been delaying. Overthinking is the last refuge of fear — move instead.`,
+
+  `Something small you do today, ${n}, will have a disproportionately large effect. The universe is amplifying your signal. Pay attention to the ripples you create.`,
+
+  `The hesitation you have been feeling is not intuition warning you away, ${n}. It is habit. Today, act before the habit speaks. Your intuition lives deeper than fear.`,
+
+  `Today brings a narrow window, ${n}. Move when you feel the pull, not after you have reasoned yourself out of it. Windows close quickly once you stop moving toward them.`,
+
+  `The energy today favours beginnings, ${n}. Whatever you start carries further than what you start later. The momentum you build now will carry you through doubt.`,
+
+  // ── RELATIONSHIPS / CONNECTION ───────────────────────────────────
+
+  `A conversation you have been avoiding will be easier today than tomorrow, ${n}. The longer you wait, the heavier it becomes. The lightness you seek lives on the other side of speaking.`,
+
+  `The person you encounter unexpectedly today, ${n}, is not a coincidence. Give them more than the attention you would usually spare. Synchronicity rewards generosity.`,
+
+  `Today asks you to listen more than you speak, ${n}. The information you need is already in the room. What you hear will change what you thought you knew.`,
+
+  `Today brings an opportunity to repair something small before it becomes something large, ${n}. Small actions prevent future problems. Prevention is the gift you give yourself.`,
+
+  `Today asks you to be the one who reaches out first, ${n}. The pride keeping you waiting is costing more than the reaching would. Vulnerability is the fastest path to what you want.`,
+
+  `A friendship is deepening in ways you have not yet recognised, ${n}. Pay attention to who stays when things are difficult. They are showing you who your people are.`,
+
+  `Someone in your life needs to hear something from you today — not advice, just acknowledgement, ${n}. Your presence is more powerful than you realise. Show up for them.`,
+
+  `The person you think least about today, ${n}, may be thinking most about you. A small gesture will land more deeply than you expect. You underestimate your impact on others.`,
+
+  // ── LOVE / ROMANTIC ─────────────────────────────────────────────
+
+  `Someone is thinking about you in ways they have not yet put into words, ${n}. The silence between you is not absence — it is accumulation. Something is building in the space you share.`,
+
+  `A connection you dismissed as casual is not as casual as you decided, ${n}. The heart knows before the mind agrees. Pay attention to what returns to your thoughts unbidden.`,
+
+  `Today carries a specific romantic frequency, ${n}. Not loud. Not dramatic. The quiet kind that rearranges everything. Stay alert to what feels ordinary but lands differently.`,
+
+  `A love that left without a proper ending is closer to your thoughts today, ${n}. The lines do not say whether this is remembrance or foreshadowing. Only that it is not random.`,
+
+  `The love you have been quietly hoping for is not as far as it feels, ${n}. Something that happened recently reduced the distance between wanting and having. You do not yet know what.`,
+
+  // ── CAUTION / WARNING ───────────────────────────────────────────
+
+  `Not everything that glitters today is yours to take, ${n}. The opportunity arriving looks generous — examine what it costs before you accept it. Some gifts come with invisible strings.`,
+
+  `Someone around you is not showing their full hand today, ${n}. You have felt this before. What you are feeling is not paranoia — it is perception. Do not dismiss it.`,
+
+  `The universe is asking you to slow down today, ${n} — not speed up. The urgency you feel is borrowed from someone else's panic. Your own pace is wiser than it looks from the inside.`,
+
+  `Be careful with your words today, ${n}. What you say in passing will be heard more deeply than you intend. This is a day for precision, not casualness. Choose them well.`,
+
+  `Something you are close to agreeing to deserves a second reading, ${n}. The first impression of it is not the full story. Look again before you commit. The fine print matters today.`,
+
+  `Not everyone in your circle is facing the same direction as you, ${n}. Today you may notice something that confirms a suspicion you have been reluctant to trust. Trust it.`,
+
+  `The loyalty you offer is not always being matched, ${n}. The lines suggest it is time to audit who you invest in — with the same care you would give a significant financial decision.`,
+
+  // ── WORK / MONEY / OPPORTUNITY ──────────────────────────────────
+
+  `Something you created or contributed to is about to receive recognition that changes the financial picture, ${n}. The invisible work is becoming visible. Be ready to receive what is owed.`,
+
+  `A professional decision that felt like a setback is beginning to reveal itself as a redirection, ${n}. The door that closed was the wrong door. The right one is directly in front of you.`,
+
+  `The idea you have been dismissing as too ambitious, ${n}, is precisely the right size. You have been scaling it down to fit other people's expectations. Stop doing that.`,
+
+  `Today is not the day to negotiate on your worth, ${n}. Wait. The leverage you need is still accumulating. Moving too early costs you what patience would have delivered freely.`,
+
+  `The work you have been doing quietly and without recognition is about to require a public face, ${n}. Prepare for visibility. What you built in private is ready for the larger stage.`,
+
+  `The breakthrough you have been working toward is closer than it feels, ${n}. One more step may be all it takes. Do not stop before the finish line becomes visible.`,
+
+  // ── OBSERVATION / AWARENESS ──────────────────────────────────────
+
+  `Pay attention to what you notice first today, ${n}. The universe leaves its most important messages where your eyes land before your mind filters. Your first instinct is rarely wrong.`,
+
+  `Something you have been looking at without seeing will become clear today, ${n}. The understanding arrives on its own schedule. Clarity is coming whether or not you force it.`,
+
+  `There is a detail in your current situation that you have been overlooking, ${n}. Today it will make itself obvious. Sometimes the answer hides in the most obvious place.`,
+
+  `Something you have been telling yourself as fact is actually a story, ${n}. Today you will have the chance to notice the difference. Stories can be rewritten. Yours is not finished.`,
+
+  `The most important thing that happens today will not announce itself as important, ${n}. Pay attention to the margins of your day — the edges are where the significant things tend to hide.`,
+
+  // ── EERIE / MYSTIC ──────────────────────────────────────────────
+
+  `Something is ending today even if nothing obvious stops, ${n}. The universe is quietly closing a chapter behind you. You will not know which one until you look back. Pay attention to what feels final.`,
+
+  `The lines of your palm carry something I do not often see, ${n} — a convergence that arrives only in the lives of those about to cross a threshold they cannot uncross. Today is close to that crossing.`,
+
+  `There is a presence in your orbit today that the lines ask me to name as significant, ${n}. I cannot tell you whether it is welcome. Only that it is not accidental.`,
+
+  `The universe is watching this particular day closely, ${n}. I cannot say more than that. Only that today carries more weight than it will appear to carry in the moment.`,
+
+  `There is something ancient in you that recognises today as significant, ${n}. Not loudly — a quiet vibration. The soul's way of marking moments the mind will only understand later.`,
+
+  `The universe does not repeat itself exactly, ${n}. What arrives today has never arrived before and will not arrive again in quite this form. Pay attention. This is not a rehearsal.`,
+
+  // ── GRIEF / COMPLETION / ENDINGS ────────────────────────────────
+
+  `Something is completing today, ${n} — a cycle, a chapter, a version of yourself. The completion is not failure. It is arrival. You have finished something that needed to be finished.`,
+
+  `The grief you carry that you do not call grief, ${n} — the low hum of something lost — is asking to be acknowledged today. Not wallowed in. Simply named. Name it and keep moving.`,
+
+  `A version of yourself is retiring today, ${n}. Not dramatically. Quietly. A way of being that served its purpose is stepping back. Let it go with gratitude rather than resistance.`,
+
+  `Today carries the weight of things that cannot be undone, ${n}. This is not a warning — it is an invitation to make peace with what is already past. Some things are finished for good reason.`,
+
+  `The universe is clearing space, ${n}. Something is being removed to make room for what is coming. Loss and preparation often look identical from the inside. Trust which one this is.`,
+
+  // ── STILLNESS / REST / SOLITUDE ─────────────────────────────────
+
+  `Today brings the quiet that precedes change, ${n}. Resist the urge to fill it. What is coming needs space to arrive. Silence is not empty — it is preparation.`,
+
+  `What appears to be stagnation today, ${n}, is actually consolidation. The roots grow before the new branch does. Invisible growth is still growth. Stay the course.`,
+
+  `The world will demand your energy today, ${n}. Give less than is asked. What is being demanded is not what is actually needed. Protect your reserves — something ahead will require them.`,
+
+  `Solitude today is not isolation — it is data collection, ${n}. The answers you are looking for will not come from the people around you. They live inside the quiet you keep avoiding.`,
+
+  `Today asks nothing of you but presence, ${n}. Not productivity, not progress — just the quality of your attention. The day rewards those who notice it fully rather than rush through it.`,
+
+  // ── SURPRISE / DETOUR / UNEXPECTED ─────────────────────────────
+
+  `Do not plan too carefully today, ${n}. The universe has a different itinerary. The detour it is about to offer is better than the destination you had in mind. Yield to it.`,
+
+  `Today brings a meeting that will not look like a meeting, ${n}. A conversation, an encounter, a glance held a moment too long. Do not rush past it. Stay with what arrives.`,
+
+  `Something arrives today that the rational mind cannot fully explain, ${n}. Do not try to explain it immediately. Experience it first. Understanding follows at its own pace.`,
+
+  `The news you have been waiting for arrives with a twist, ${n}. What comes is not quite what you expected — but it is better. Stay open to the version you did not plan for.`,
+
+  `Something arrives ahead of schedule today, ${n}. You were not expecting it this soon. Adjust without resistance — early is not wrong. It is the universe trusting your readiness.`,
+
+  // ── SELF / IDENTITY ─────────────────────────────────────────────
+
+  `The version of you that is afraid and the version that is ready are both telling the truth today, ${n}. Let the ready one go first. Fear does not need permission to speak — neither should your courage.`,
+
+  `Today is a good day to forgive yourself for something old, ${n}. The weight of it has been costing you more than the thing itself was worth. Self-forgiveness is the unlock you have been looking for.`,
+
+  `Today reminds you that the person you think you need to become already exists inside you, ${n}. You are not building someone new — you are remembering who you have always been.`,
+
+  `The standard you hold yourself to today, ${n}, is one you inherited rather than chose. Question whether it still belongs to you. Some standards were built for a smaller version of your life.`,
+
+  `The comparison you have been making, ${n}, is between your interior and someone else's exterior. These are not comparable things. Stop measuring one against the other.`,
+
+  `Today asks you to want what you actually want, ${n} — not the edited version you have decided is reasonable. Scaling down your desires to fit others' expectations is not virtue. It is a habit of smallness.`,
+
+  `You have been waiting for external confirmation of something you already know internally, ${n}. The confirmation is not coming before the action. The action is what produces the confirmation.`,
+
+  // ── INTUITION / FEELING ─────────────────────────────────────────
+
+  `The answer you have been seeking is sitting in a feeling, not a thought, ${n}. Stop thinking and start feeling. Your intuition knows what your mind is still catching up to.`,
+
+  `The truth you know in your bones is truer than any doubt in your mind, ${n}. Gut feelings are data. Trust what your body is telling you before your reasoning rewrites it.`,
+
+  `The fear you feel is not a stop sign — it is a compass, ${n}. It is pointing directly at something that matters. Move toward it rather than away from it.`,
+
+  `The question that will change everything is sitting on the tip of your tongue, ${n}. Ask it today. The answer has been waiting longer than the question has.`,
+
+  `An idea that has been forming below the surface will break through today, ${n}. Have something nearby to catch it. Inspiration comes to those who are ready to receive it.`,
+
+  // ── TIMING / PATIENCE ───────────────────────────────────────────
+
+  `Today is one of those days that will only be understood in retrospect, ${n}. Do not try to extract its meaning in real time. Live it. The understanding will arrive when it is ready.`,
+
+  `The timing you have been waiting for will not announce itself as perfect, ${n}. It will simply feel slightly less impossible than before. That is the signal. Move on it.`,
+
+  `The delay you have been frustrated by is ending, ${n}. What was held back was being held back for a reason that is about to become clear. Patience has been accumulating interest. It is time.`,
+
+  `Something is conspiring to push you toward your calling, ${n}. Discomfort is the universe's way of saying you are ready for more than you have been settling for. Move into it.`,
+
+  // ── RELEASE / LETTING GO ────────────────────────────────────────
+
+  `Today asks you to stop explaining yourself to people who have already decided, ${n}. Your words cannot reach someone determined not to listen. Save your energy for those who are genuinely open.`,
+
+  `Something you have been protecting is safe to release, ${n}. Fear has been standing guard over it, but it no longer needs protection. Open your hands and let it move.`,
+
+  `The person who hurt you was only capable of what they were capable of, ${n}. Their limitations are not your reflection. Release the weight of shame that was never yours to carry.`,
+
+  `The power you give others over your peace is power you can reclaim, ${n}. Your equilibrium is not dependent on their choices. Take it back and hold it.`,
+
+  // ── CREATIVE / CALLING ──────────────────────────────────────────
+
+  `The creative impulse you have been explaining away, ${n}, is not a distraction from your real work. It is your real work. What calls to you calls because it is meant for you.`,
+
+  `Something you made, said, or shared in the past is working on someone's mind right now, ${n}, in ways you will never fully know. Your creative output has a life beyond you.`,
+
+  `The block you have been experiencing, ${n}, is not absence of inspiration — it is accumulation that has not yet found its form. You are full, not empty. The form will arrive when the pressure is right.`,
+
+  `A moment of joy is trying to reach you today — let it, ${n}. You do not have to earn it first. It is arriving regardless of whether you have been productive enough to deserve it.`,
+
+  // ── LEGACY / IMPACT ─────────────────────────────────────────────
+
+  `The legacy you are building is visible in small ways you are not yet aware of, ${n}. Your impact spreads further than you know. Do not stop because the evidence is quiet.`,
+
+  `Today asks you to plant a seed for a garden you may not see bloom, ${n}. Legacy is built in moments that feel insignificant. Your smallest gifts compound over time.`,
+
+  `Something you thought was a limitation is actually a protection, ${n}. The universe builds walls around what it is not yet time for you to access. Trust the architecture of the timing.`,
+
+  // ── BODY / PHYSICAL ─────────────────────────────────────────────
+
+  `Your body is carrying more than it is telling you today, ${n}. Listen below the noise of the day for what your physical self is trying to communicate. It rarely speaks loudly, but it is always honest.`,
+
+  `The rest you deny yourself, ${n}, is debt accumulating interest. What you borrow from your body today will be collected later. Today is a good day to make a payment instead.`,
+
+  // ── SOUL / SPIRITUAL ────────────────────────────────────────────
+
+  `The part of you that does not believe in any of this is the part most in need of what it is resisting, ${n}. The cynical self protects what the tender self cannot yet bear to hope for.`,
+
+  `Your ancestors, whatever form they take for you, are unusually close today, ${n}. Their accumulated wisdom is available if you are quiet enough to receive it. This is not metaphor.`,
+
+  // ── ENDINGS / BEGINNINGS ────────────────────────────────────────
+
+  `Today marks the end of a waiting period, ${n}, though it may not feel that way immediately. Something that has been suspended is beginning to move again. The stillness is over.`,
+
+  `Something that felt impossible yesterday can feel manageable today, ${n}. Perspective shifts happen overnight. Do not let yesterday's ceiling become today's assumption. Keep moving.`,
+
+  `A door you thought was closed permanently has a new handle, ${n}. Sometimes the universe gives second chances in forms so different you almost miss them. Stay open to the unexpected shape of return.`,
+
+  `Something you were told recently was not the full story, ${n}. The part that was left out is the part that matters. Today you are closer to knowing what it was. Wait for it to surface.`,
+
+  `The time you spent in the dark was not wasted time, ${n}. It was teaching you how to recognise the light when it arrives. Nothing has been wasted. Everything has been necessary.`,
+
+  `Today brings a shift in how you see yourself — pay attention to it, ${n}. You are beginning to believe something about your own worth that will quietly change every decision ahead.`,
+
+  `A promise you made to yourself a long time ago is asking to be kept, ${n}. Not as obligation — as completion. Today is the day to show yourself that you can be trusted.`,
+
+  `Something you have been told is fixed is more moveable than it appears, ${n}. The situation does not have the permanence that either of you has been treating it with. Press gently. It will give.`,
+
+];

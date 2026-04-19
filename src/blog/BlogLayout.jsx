@@ -128,7 +128,7 @@ export default function BlogLayout({ children, title, date, heroImage, heroAlt }
         fontFamily: "'Georgia', serif",
         fontStyle: 'italic',
       }}>
-        Madame Zafira is the AI oracle at the heart of MysticFortunes.ai — ancient wisdom, modern magic.
+        Madame Zafira is the resident oracle of MysticFortunes.ai — Ancient Wisdom, Modern Magic.
         <div style={{ marginTop: 16 }}>
           <Link to="/" style={{
             color: '#c9a84c',

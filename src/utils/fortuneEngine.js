@@ -53,8 +53,8 @@ export function generatePartnerCompatibility(name1, dob1, name2, dob2) {
   const rng = seededRandom(seed);
   
   // Score between 75-99
-  const scoreVariation = Math.floor(rng() * 20);
-  const score = 80 + scoreVariation;
+  const scoreVariation = Math.floor(rng() * 25);
+  const score = 75 + scoreVariation;
 
   const insight = seededPick(rng, INSIGHTS);
   const alignment = seededPick(rng, ALIGNMENT_TEXTS);
